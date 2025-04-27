@@ -1,30 +1,76 @@
 import mongoose from 'mongoose';
 
 const leadSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true },
-  phoneNumber: { type: String, required: true },
-  altNumber: { type: String, default: '' },
-  gender: { type: String, enum: ['Male', 'Female', 'Other'], default: '' },
-  dateOfBirth: { type: String, default: '' },
-  age: { type: String, default: '' },
-  tabacoUser: { type: String, enum: ['yes', 'no'], default: 'no' },
-  annualIncome: { type: String, default: '' },
-  occupation: { type: String, default: '' },
-  education: { type: String, enum: ['12', 'Graduate', 'Postgraduate', 'PhD'], default: '12' },
-  address: { type: String, default: '' },
-  status: { type: String, enum: ['Fresh', 'Interested', 'Callback Later', 'Wrong Number', 'Won', 'Lost'], default: 'Fresh' },
-  notes: { type: [String], default: [] },
-  assignedTo: { type: String, default: '' },
-  assignedFrom: { type: String, default: '' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// Update the updatedAt timestamp before saving
-leadSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true
+  },
+  phoneNumber: {
+    type: String,
+    required: true
+  },
+  altNumber: {
+    type: String,
+    default: ''
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other'],
+    default: 'Other'
+  },
+  dateOfBirth: {
+    type: String,
+    default: ''
+  },
+  age: {
+    type: String,
+    default: ''
+  },
+  tabacoUser: {
+    type: String,
+    enum: ['yes', 'no'],
+    default: 'no'
+  },
+  annualIncome: {
+    type: String,
+    default: ''
+  },
+  occupation: {
+    type: String,
+    default: ''
+  },
+  education: {
+    type: String,
+    enum: ['10th', '12th', 'Graduate', 'Post Graduate', 'Other'],
+    default: '12th'
+  },
+  address: {
+    type: String,
+    default: ''
+  },
+  status: {
+    type: String,
+    enum: ['Fresh', 'Interested', 'Callback Later', 'Wrong Number', 'Won', 'Lost'],
+    default: 'Fresh'
+  },
+  notes: {
+    type: [String],
+    default: []
+  },
+  assignedTo: {
+    type: String,
+    default: ''
+  },
+  assignedFrom: {
+    type: String,
+    default: ''
+  }
+}, {
+  timestamps: true
 });
 
 export const Lead = mongoose.models.Lead || mongoose.model('Lead', leadSchema);
@@ -41,7 +87,7 @@ export type LeadType = {
   tabacoUser?: 'yes' | 'no';
   annualIncome?: string;
   occupation?: string;
-  education?: '12' | 'Graduate' | 'Postgraduate' | 'PhD';
+  education?: '10th' | '12th' | 'Graduate' | 'Post Graduate' | 'Other';
   address?: string;
   status?: 'Fresh' | 'Interested' | 'Callback Later' | 'Wrong Number' | 'Won' | 'Lost';
   notes?: string[];

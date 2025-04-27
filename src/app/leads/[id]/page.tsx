@@ -30,6 +30,8 @@ export default function ViewLead({ params }: { params: { id: string } }) {
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [newNote, setNewNote] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -119,6 +121,36 @@ export default function ViewLead({ params }: { params: { id: string } }) {
       alert('Error updating status');
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    
+    setIsAddingNote(true);
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          newNote: newNote.trim()
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to add note');
+      }
+
+      const updatedLead = await res.json();
+      setLead(updatedLead);
+      setNewNote('');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error adding note');
+    } finally {
+      setIsAddingNote(false);
     }
   };
 
@@ -273,25 +305,33 @@ export default function ViewLead({ params }: { params: { id: string } }) {
               </dd>
             </div>
 
+            {/* Notes Section */}
             <div className="col-span-2">
               <dt className="text-sm font-medium text-gray-500">Notes</dt>
               <dd className="mt-1">
                 <div className="space-y-4">
-                  {lead?.notes?.map((note, index) => (
+                  {lead?.thread?.filter(entry => entry.action === 'Note Added').map((entry, index) => (
                     <div key={index} className="p-3 bg-gray-50 rounded-md">
-                      <p className="text-sm text-gray-700">{note}</p>
+                      <p className="text-sm text-gray-700">{entry.details}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Added by {entry.performedBy} on {new Date(entry.timestamp).toLocaleString()}
+                      </p>
                     </div>
                   ))}
                   <div className="mt-4">
                     <textarea
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
                       placeholder="Add a note..."
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                       rows={3}
                     />
                     <button
-                      className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                      onClick={handleAddNote}
+                      disabled={isAddingNote || !newNote.trim()}
+                      className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
-                      Add Note
+                      {isAddingNote ? 'Adding...' : 'Add Note'}
                     </button>
                   </div>
                 </div>
@@ -339,53 +379,34 @@ export default function ViewLead({ params }: { params: { id: string } }) {
           </dl>
         </div>
 
-        {/* History/Thread Card */}
+        {/* History Panel */}
         <div className="w-96 bg-white shadow-sm rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-900">History</h2>
-            <button
-              className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-              onClick={() => {/* Add new note/history entry */}}
-            >
-              Add Note
-            </button>
           </div>
 
           <div className="space-y-4">
-            {/* Example history entries - replace with actual data */}
-            <div className="border-l-2 border-blue-500 pl-4">
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>Created Lead</span>
-                <span>{new Date(lead.createdAt || '').toLocaleDateString()}</span>
-              </div>
-              <p className="mt-1 text-sm text-gray-700">Lead was created with initial details.</p>
-            </div>
-
-            {lead.updatedAt && lead.updatedAt !== lead.createdAt && (
-              <div className="border-l-2 border-yellow-500 pl-4">
+            {lead?.thread?.map((entry, index) => (
+              <div key={index} className="border-l-2 border-blue-500 pl-4">
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>Updated Lead</span>
-                  <span>{new Date(lead.updatedAt).toLocaleDateString()}</span>
+                  <span>{entry.action}</span>
+                  <span>{new Date(entry.timestamp).toLocaleString()}</span>
                 </div>
-                <p className="mt-1 text-sm text-gray-700">Lead details were updated.</p>
+                <p className="mt-1 text-sm text-gray-700">{entry.details}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  By {entry.performedBy}
+                </p>
               </div>
-            )}
+            ))}
 
-            {/* Add more history entries here */}
-          </div>
-
-          {/* Add Note Form */}
-          <div className="mt-6 pt-4 border-t">
-            <textarea
-              placeholder="Add a note..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              rows={3}
-            />
-            <button
-              className="mt-2 w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              Save Note
-            </button>
+            {/* Initial creation entry */}
+            <div className="border-l-2 border-green-500 pl-4">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Lead Created</span>
+                <span>{new Date(lead?.createdAt || '').toLocaleString()}</span>
+              </div>
+              <p className="mt-1 text-sm text-gray-700">Lead was created with initial details</p>
+            </div>
           </div>
         </div>
       </div>
