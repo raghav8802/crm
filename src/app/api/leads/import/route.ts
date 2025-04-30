@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { Readable } from 'stream';
 import * as XLSX from 'xlsx';
 import connectDB from '@/lib/db';
 import { Lead } from '@/models/Lead';

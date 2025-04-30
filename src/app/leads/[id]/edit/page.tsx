@@ -9,19 +9,13 @@ export default function EditLead({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [formData, setFormData] = useState<LeadType>({
-    id: '',
+    _id: '',
     name: '',
     email: '',
     phoneNumber: '',
-    altNumber: undefined,
-    gender: undefined,
-    address: undefined,
-    age: undefined,
-    tabacoUser: undefined,
-    annualIncome: undefined,
-    occupation: undefined,
-    education: undefined,
-    dateOfBirth: undefined,
+    status: 'Fresh',
+    notes: [],
+    thread: []
   });
 
   useEffect(() => {
@@ -240,7 +234,7 @@ export default function EditLead({ params }: { params: { id: string } }) {
             <input
               type="date"
               name="dateOfBirth"
-              value={formData.dateOfBirth instanceof Date ? formData.dateOfBirth.toISOString().split('T')[0] : ''}
+              value={typeof formData.dateOfBirth === 'string' ? formData.dateOfBirth : ''}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
             />

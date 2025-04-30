@@ -4,7 +4,7 @@ import { Lead } from '@/models/Lead';
 
 export async function GET() {
   try {
-    const db = await connectDB();
+    await connectDB();
     const recentLeads = await Lead.find()
       .sort({ createdAt: -1 })
       .limit(5)

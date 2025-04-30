@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { LeadType } from '@/models/Lead';
+import { UserType } from '@/models/User';
 import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -25,10 +26,26 @@ ChartJS.register(
   ArcElement
 );
 
+interface StatusStat {
+  _id: string;
+  count: number;
+}
+
+interface AssignedStat {
+  _id: string | null;
+  count: number;
+}
+
+interface StatsData {
+  statusStats: StatusStat[];
+  assignedStats: AssignedStat[];
+}
+
 export default function Home() {
   const [totalLeads, setTotalLeads] = useState(0);
   const [recentLeads, setRecentLeads] = useState<LeadType[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +65,11 @@ export default function Home() {
         const statsRes = await fetch('/api/leads/stats');
         const statsData = await statsRes.json();
         setStats(statsData);
+
+        // Fetch users
+        const usersRes = await fetch('/api/users');
+        const usersData = await usersRes.json();
+        setUsers(usersData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -57,6 +79,12 @@ export default function Home() {
 
     fetchData();
   }, []);
+
+  const getUserName = (userId: string | undefined) => {
+    if (!userId) return 'Unassigned';
+    const user = users.find(u => u._id === userId);
+    return user ? user.name : 'Unassigned';
+  };
 
   const statusColors = {
     'Fresh': 'rgba(59, 130, 246, 0.5)',
@@ -68,29 +96,35 @@ export default function Home() {
   };
 
   const barChartData = {
-    labels: stats?.statusStats.map((stat: any) => stat._id || 'Unassigned'),
+    labels: stats?.statusStats.map((stat) => stat._id || 'Unassigned'),
     datasets: [
       {
         label: 'Leads by Status',
-        data: stats?.statusStats.map((stat: any) => stat.count),
-        backgroundColor: stats?.statusStats.map((stat: any) => statusColors[stat._id as keyof typeof statusColors] || 'rgba(156, 163, 175, 0.5)'),
-        borderColor: stats?.statusStats.map((stat: any) => statusColors[stat._id as keyof typeof statusColors]?.replace('0.5', '1') || 'rgba(156, 163, 175, 1)'),
+        data: stats?.statusStats.map((stat) => stat.count),
+        backgroundColor: stats?.statusStats.map((stat) => statusColors[stat._id as keyof typeof statusColors] || 'rgba(156, 163, 175, 0.5)'),
+        borderColor: stats?.statusStats.map((stat) => statusColors[stat._id as keyof typeof statusColors]?.replace('0.5', '1') || 'rgba(156, 163, 175, 1)'),
         borderWidth: 1,
       },
     ],
   };
 
   const pieChartData = {
-    labels: stats?.assignedStats.map((stat: any) => stat._id || 'Unassigned'),
+    labels: stats?.assignedStats.map((stat) => {
+      if (!stat._id) return 'Unassigned';
+      const user = users.find(u => u._id === stat._id);
+      return user ? user.name : 'Unknown User';
+    }),
     datasets: [
       {
-        data: stats?.assignedStats.map((stat: any) => stat.count),
+        data: stats?.assignedStats.map((stat) => stat.count),
         backgroundColor: [
           'rgba(255, 99, 132, 0.5)',
           'rgba(54, 162, 235, 0.5)',
           'rgba(255, 206, 86, 0.5)',
           'rgba(75, 192, 192, 0.5)',
           'rgba(153, 102, 255, 0.5)',
+          'rgba(255, 159, 64, 0.5)',
+          'rgba(199, 199, 199, 0.5)',
         ],
         borderColor: [
           'rgba(255, 99, 132, 1)',
@@ -98,6 +132,8 @@ export default function Home() {
           'rgba(255, 206, 86, 1)',
           'rgba(75, 192, 192, 1)',
           'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(199, 199, 199, 1)',
         ],
         borderWidth: 1,
       },
@@ -122,8 +158,8 @@ export default function Home() {
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-            </div>
-          </div>
+              </div>
+              </div>
           <div className="mt-4">
             <span className="text-green-500 text-sm font-semibold">↑ 12%</span>
             <span className="text-gray-500 text-sm ml-2">vs last month</span>
@@ -159,7 +195,7 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-          </div>
+                </div>
           <div className="mt-4">
             <span className="text-green-500 text-sm font-semibold">↑ 5%</span>
             <span className="text-gray-500 text-sm ml-2">vs last month</span>
@@ -170,7 +206,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Team Members</p>
-              <h3 className="text-2xl font-bold text-gray-900">12</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{users.length}</h3>
             </div>
             <div className="bg-yellow-100 p-3 rounded-full">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,11 +215,11 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">+2</span>
-            <span className="text-gray-500 text-sm ml-2">new this month</span>
+            <span className="text-green-500 text-sm font-semibold">Active</span>
+            <span className="text-gray-500 text-sm ml-2">team members</span>
           </div>
         </div>
-      </div>
+              </div>
 
       {/* Recent Leads Table */}
       <div className="bg-white rounded-lg shadow">
@@ -195,8 +231,8 @@ export default function Home() {
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
             >
               View All
-            </Link>
-          </div>
+                </Link>
+              </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -245,7 +281,7 @@ export default function Home() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lead.assignedTo || 'Unassigned'}
+                    {getUserName(lead.assignedTo)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(lead.createdAt || '').toLocaleDateString()}

@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { LeadType } from '@/models/Lead';
+import { UserType } from '@/models/User';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function LeadsPage() {
-  const router = useRouter();
   const [leads, setLeads] = useState<LeadType[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -36,8 +35,20 @@ export default function LeadsPage() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/users');
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
+    fetchUsers();
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -45,7 +56,6 @@ export default function LeadsPage() {
       return;
     }
 
-    setDeletingId(id);
     try {
       const res = await fetch(`/api/leads/${id}`, {
         method: 'DELETE',
@@ -59,8 +69,6 @@ export default function LeadsPage() {
     } catch (error) {
       console.error('Error:', error);
       alert('Error deleting lead. Please try again.');
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -98,12 +106,17 @@ export default function LeadsPage() {
     }
   };
 
+  const getUserName = (userId: string) => {
+    const user = users.find(u => u._id === userId);
+    return user ? user.name : 'Unassigned';
+  };
+
   const filteredLeads = leads.filter(lead => {
     const query = searchQuery.toLowerCase();
     return (
       lead.name.toLowerCase().includes(query) ||
       lead.phoneNumber.toLowerCase().includes(query) ||
-      lead.email.toLowerCase().includes(query)
+      (lead.email?.toLowerCase() || '').includes(query)
     );
   });
 
@@ -257,7 +270,7 @@ export default function LeadsPage() {
                     </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{lead.phoneNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{lead.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{lead.email || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                       ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
@@ -272,7 +285,7 @@ export default function LeadsPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {lead.assignedTo ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {lead.assignedTo}
+                        {getUserName(lead.assignedTo)}
                       </span>
                     ) : (
                       <span className="text-gray-500">Unassigned</span>

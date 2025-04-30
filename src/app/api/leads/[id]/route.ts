@@ -1,33 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Lead } from '@/models/Lead';
 import mongoose from 'mongoose';
 import { LeadThread } from '@/models/LeadThread';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
-    
-    // Validate if the ID is a valid MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json(
-        { error: 'Invalid lead ID format' },
-        { status: 400 }
-      );
-    }
-
-    const db = await connectDB();
-    const lead = await Lead.findById(id);
+    await connectDB();
+    const lead = await Lead.findById(params.id);
     
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Fetch thread entries for this lead
-    const threadEntries = await LeadThread.find({ leadId: id }).sort({ timestamp: -1 });
+    const threadEntries = await LeadThread.find({ leadId: params.id }).sort({ timestamp: -1 });
     
     return NextResponse.json({
       ...lead.toObject(),
@@ -43,28 +33,25 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    await connectDB();
+    const lead = await Lead.findById(params.id);
     
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: 'Invalid lead ID format' },
         { status: 400 }
       );
     }
 
-    const db = await connectDB();
-    
     // Delete all thread entries for this lead
-    await LeadThread.deleteMany({ leadId: id });
+    await LeadThread.deleteMany({ leadId: params.id });
     
     // Delete the lead
-    const deletedLead = await Lead.findByIdAndDelete(id);
-    
-    if (!deletedLead) {
+    if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
     
@@ -79,31 +66,29 @@ export async function DELETE(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    await connectDB();
+    const body = await request.json();
     
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: 'Invalid lead ID format' },
         { status: 400 }
       );
     }
 
-    const db = await connectDB();
-    const body = await request.json();
-    
     // Get the current lead to compare changes
-    const currentLead = await Lead.findById(id);
+    const currentLead = await Lead.findById(params.id);
     if (!currentLead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Update the lead with new data
     const updatedLead = await Lead.findByIdAndUpdate(
-      id,
+      params.id,
       { ...body, updatedAt: new Date() },
       { new: true }
     );
@@ -111,7 +96,7 @@ export async function PUT(
     // Create thread entries for changes
     if (body.status && body.status !== currentLead.status) {
       const threadEntry = new LeadThread({
-        leadId: id,
+        leadId: params.id,
         action: 'Status Update',
         details: `Status changed from ${currentLead.status} to ${body.status}`,
         performedBy: 'System'
@@ -121,7 +106,7 @@ export async function PUT(
 
     if (body.assignedTo && body.assignedTo !== currentLead.assignedTo) {
       const threadEntry = new LeadThread({
-        leadId: id,
+        leadId: params.id,
         action: 'Assignment Update',
         details: `Assigned to ${body.assignedTo}`,
         performedBy: 'System'
@@ -132,7 +117,7 @@ export async function PUT(
     // Handle note addition
     if (body.newNote) {
       const threadEntry = new LeadThread({
-        leadId: id,
+        leadId: params.id,
         action: 'Note Added',
         details: body.newNote,
         performedBy: 'System'

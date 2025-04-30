@@ -1,17 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { LeadType } from '@/models/Lead';
+import { UserType } from '@/models/User';
 import Link from 'next/link';
-
-// Sample employee data
-const sampleEmployees = [
-  { id: '1', name: 'John Doe', role: 'Sales Executive' },
-  { id: '2', name: 'Jane Smith', role: 'Sales Manager' },
-  { id: '3', name: 'Mike Johnson', role: 'Team Lead' },
-  { id: '4', name: 'Sarah Williams', role: 'Sales Executive' },
-];
 
 const leadStatuses = [
   { value: 'Fresh', label: 'Fresh' },
@@ -22,11 +15,13 @@ const leadStatuses = [
   { value: 'Lost', label: 'Lost' },
 ];
 
-export default function ViewLead({ params }: { params: { id: string } }) {
-  const router = useRouter();
+export default function LeadDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [lead, setLead] = useState<LeadType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [selectedUser, setSelectedUser] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -34,43 +29,48 @@ export default function ViewLead({ params }: { params: { id: string } }) {
   const [isAddingNote, setIsAddingNote] = useState(false);
 
   useEffect(() => {
-    const fetchLead = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`/api/leads/${params.id}`);
-        if (!res.ok) {
-          throw new Error('Failed to fetch lead');
-        }
-        const data = await res.json();
-        setLead(data);
-        setSelectedStatus(data.status || 'New');
-        setSelectedEmployee(data.assignedTo || '');
+        // Fetch lead data
+        const leadRes = await fetch(`/api/leads/${id}`);
+        if (!leadRes.ok) throw new Error('Failed to fetch lead');
+        const leadData = await leadRes.json();
+        setLead(leadData);
+        setSelectedStatus(leadData.status);
+        setSelectedUser(leadData.assignedTo || '');
+
+        // Fetch users
+        const usersRes = await fetch('/api/users');
+        if (!usersRes.ok) throw new Error('Failed to fetch users');
+        const usersData = await usersRes.json();
+        setUsers(usersData);
       } catch (error) {
         console.error('Error:', error);
-        alert('Error loading lead data');
+        alert('Error loading data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLead();
-  }, [params.id]);
+    fetchData();
+  }, [id]);
 
   const handleAssign = async () => {
-    if (!selectedEmployee) {
-      alert('Please select an employee');
+    if (!selectedUser) {
+      alert('Please select a user');
       return;
     }
 
     setIsAssigning(true);
     try {
-      const res = await fetch(`/api/leads/${params.id}`, {
+      const res = await fetch(`/api/leads/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...lead,
-          assignedTo: selectedEmployee,
+          assignedTo: selectedUser,
         }),
       });
 
@@ -97,7 +97,7 @@ export default function ViewLead({ params }: { params: { id: string } }) {
 
     setIsUpdatingStatus(true);
     try {
-      const res = await fetch(`/api/leads/${params.id}`, {
+      const res = await fetch(`/api/leads/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ export default function ViewLead({ params }: { params: { id: string } }) {
     
     setIsAddingNote(true);
     try {
-      const res = await fetch(`/api/leads/${params.id}`, {
+      const res = await fetch(`/api/leads/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -343,14 +343,14 @@ export default function ViewLead({ params }: { params: { id: string } }) {
               <dd className="mt-1">
                 <div className="flex gap-2">
                   <select
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
+                    value={selectedUser}
+                    onChange={(e) => setSelectedUser(e.target.value)}
                     className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="">Select Employee</option>
-                    {sampleEmployees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.name} ({emp.role})
+                    <option value="">Select User</option>
+                    {users.map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name} ({user.role})
                       </option>
                     ))}
                   </select>
@@ -364,7 +364,9 @@ export default function ViewLead({ params }: { params: { id: string } }) {
                 </div>
                 {lead?.assignedTo && (
                   <p className="mt-1 text-sm text-gray-500">
-                    Currently assigned to: <span className="font-medium">{lead.assignedTo}</span>
+                    Currently assigned to: <span className="font-medium">
+                      {users.find(u => u._id === lead.assignedTo)?.name || 'Unknown User'}
+                    </span>
                   </p>
                 )}
               </dd>

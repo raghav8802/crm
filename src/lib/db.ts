@@ -6,7 +6,7 @@ interface CachedMongoose {
 }
 
 declare global {
-  var mongoose: CachedMongoose;
+  let mongoose: CachedMongoose;
 }
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/crm';
@@ -15,10 +15,10 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
 
-let cached: CachedMongoose = (global as any).mongoose || { conn: null, promise: null };
+let cached: CachedMongoose = global.mongoose || { conn: null, promise: null };
 
 if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
 async function connectDB() {

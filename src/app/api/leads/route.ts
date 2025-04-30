@@ -3,10 +3,10 @@ import connectDB from '@/lib/db';
 import { Lead } from '@/models/Lead';
 import { LeadThread } from '@/models/LeadThread';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const db = await connectDB();
-    const body = await request.json();
+    await connectDB();
+    const body = await req.json();
 
     // Create a new lead
     const lead = new Lead({
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     await threadEntry.save();
 
     return NextResponse.json(lead, { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating lead:', error);
     return NextResponse.json(
       { error: 'Failed to create lead' },
@@ -50,10 +50,23 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+interface LeadQuery {
+  status?: string;
+}
+
+export async function GET(req: Request) {
   try {
-    const db = await connectDB();
-    const leads = await Lead.find().sort({ createdAt: -1 });
+    await connectDB();
+    
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status');
+    
+    const query: LeadQuery = {};
+    if (status) {
+      query.status = status;
+    }
+    
+    const leads = await Lead.find(query).sort({ createdAt: -1 });
     return NextResponse.json(leads);
   } catch (error) {
     console.error('Error fetching leads:', error);

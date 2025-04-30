@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { UserType } from '@/models/User';
 
 const educationOptions = [
   { value: '12', label: '12th' },
@@ -19,15 +20,9 @@ const statusOptions = [
   { value: 'Lost', label: 'Lost' },
 ];
 
-const sampleEmployees = [
-  { id: '1', name: 'John Doe', role: 'Sales Executive' },
-  { id: '2', name: 'Jane Smith', role: 'Sales Manager' },
-  { id: '3', name: 'Mike Johnson', role: 'Team Lead' },
-  { id: '4', name: 'Sarah Williams', role: 'Sales Executive' },
-];
-
 export default function AddLead() {
   const router = useRouter();
+  const [users, setUsers] = useState<UserType[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -46,6 +41,21 @@ export default function AddLead() {
     assignedFrom: '',
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch('/api/users');
+        if (!res.ok) throw new Error('Failed to fetch users');
+        const data = await res.json();
+        setUsers(data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +92,7 @@ export default function AddLead() {
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
               type="text"
+              placeholder='Enter Name'
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -93,6 +104,7 @@ export default function AddLead() {
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
+              placeholder='Enter Email'
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -103,7 +115,10 @@ export default function AddLead() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Phone Number</label>
             <input
-              type="tel"
+              type="tel" 
+              pattern="[0-9]{10}" 
+              maxLength={10}
+              placeholder='Enter Phone Number'
               required
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
@@ -114,7 +129,8 @@ export default function AddLead() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Alternative Number</label>
             <input
-              type="tel"
+              type="number"
+              placeholder='Enter Alternative Number'
               value={formData.altNumber}
               onChange={(e) => setFormData({ ...formData, altNumber: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -149,6 +165,7 @@ export default function AddLead() {
             <label className="block text-sm font-medium text-gray-700">Age</label>
             <input
               type="number"
+              placeholder='Enter Age'
               value={formData.age}
               onChange={(e) => setFormData({ ...formData, age: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -171,6 +188,7 @@ export default function AddLead() {
             <label className="block text-sm font-medium text-gray-700">Annual Income</label>
             <input
               type="text"
+              placeholder='Enter Annual Income'
               value={formData.annualIncome}
               onChange={(e) => setFormData({ ...formData, annualIncome: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -181,6 +199,7 @@ export default function AddLead() {
             <label className="block text-sm font-medium text-gray-700">Occupation</label>
             <input
               type="text"
+              placeholder='Enter Occupation'
               value={formData.occupation}
               onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -205,6 +224,7 @@ export default function AddLead() {
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Address</label>
             <textarea
+              placeholder='Enter Address'
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               rows={3}
@@ -234,10 +254,10 @@ export default function AddLead() {
               onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="">Select Employee</option>
-              {sampleEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name} ({emp.role})
+              <option value="">Select User</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name} ({user.role})
                 </option>
               ))}
             </select>
@@ -250,10 +270,10 @@ export default function AddLead() {
               onChange={(e) => setFormData({ ...formData, assignedFrom: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="">Select Employee</option>
-              {sampleEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.name} ({emp.role})
+              <option value="">Select User</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name} ({user.role})
                 </option>
               ))}
             </select>

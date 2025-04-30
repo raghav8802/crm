@@ -4,7 +4,7 @@ import { Lead } from '@/models/Lead';
 
 export async function GET() {
   try {
-    const db = await connectDB();
+    await connectDB();
     
     // Get status distribution
     const statusStats = await Lead.aggregate([
