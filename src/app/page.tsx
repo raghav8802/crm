@@ -47,10 +47,20 @@ export default function Home() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch user data
+        const userRes = await fetch('/api/auth/check', {
+          credentials: 'include',
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setUserName(userData.user.name || 'User');
+        }
+
         // Fetch total leads count
         const totalRes = await fetch('/api/leads');
         const totalData = await totalRes.json();
@@ -146,6 +156,14 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Welcome Message */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Welcome, {userName}!
+              </h1>
+        <p className="text-gray-600 mt-2">Here's your dashboard overview</p>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-6">

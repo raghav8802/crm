@@ -6,7 +6,7 @@ interface CachedMongoose {
 }
 
 declare global {
-  let mongoose: CachedMongoose;
+  var mongoose: CachedMongoose;
 }
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/crm';
@@ -29,17 +29,27 @@ async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('MongoDB connected successfully');
       cached.conn = mongoose;
       return cached.conn;
+    }).catch((err) => {
+      console.error('MongoDB connection error:', err);
+      cached.promise = null;
+      throw err;
     });
   }
 
   try {
     cached.conn = await cached.promise;
   } catch (e) {
+    console.error('MongoDB connection failed:', e);
     cached.promise = null;
     throw e;
   }

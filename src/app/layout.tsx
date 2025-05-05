@@ -6,8 +6,8 @@ import Sidebar from '@/app/components/Sidebar';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Gyan Education",
-  description: "Lead Management System",
+  title: "Gyan Education CRM",
+  description: "Customer Relationship Management for Gyan Education",
 };
 
 export default function RootLayout({

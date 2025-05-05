@@ -11,6 +11,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importStatus, setImportStatus] = useState<{
@@ -18,6 +19,19 @@ export default function LeadsPage() {
     failed: number;
     errors: string[];
   } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ _id: string; role: string } | null>(null);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await fetch('/api/auth/check');
+      if (!res.ok) throw new Error('Failed to fetch user');
+      const data = await res.json();
+      console.log('Current User:', data.user);
+      setCurrentUser(data.user);
+    } catch (err) {
+      console.error('Error fetching user:', err);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -26,6 +40,7 @@ export default function LeadsPage() {
         throw new Error('Failed to fetch leads');
       }
       const data = await res.json();
+      console.log('All Leads:', data);
       setLeads(data);
     } catch (err) {
       setError('Error loading leads');
@@ -47,9 +62,17 @@ export default function LeadsPage() {
   };
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchLeads();
     fetchUsers();
   }, []);
+
+  // Set selected user when currentUser changes
+  useEffect(() => {
+    if (currentUser?._id) {
+      setSelectedUserId(currentUser._id);
+    }
+  }, [currentUser]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this lead?')) {
@@ -112,6 +135,12 @@ export default function LeadsPage() {
   };
 
   const filteredLeads = leads.filter(lead => {
+    // Filter by selected user if one is selected
+    if (selectedUserId && lead.assignedTo !== selectedUserId) {
+      return false;
+    }
+    
+    // Filter by search query
     const query = searchQuery.toLowerCase();
     return (
       lead.name.toLowerCase().includes(query) ||
@@ -120,12 +149,18 @@ export default function LeadsPage() {
     );
   });
 
+  console.log('Filtered Leads:', filteredLeads);
+
   if (loading) {
     return <div className="p-6">Loading leads...</div>;
   }
 
   if (error) {
     return <div className="p-6 text-red-600">{error}</div>;
+  }
+
+  if (!currentUser) {
+    return <div className="p-6 text-red-600">Please log in to view leads</div>;
   }
 
   return (
@@ -151,6 +186,20 @@ export default function LeadsPage() {
                 </svg>
               </button>
             )}
+          </div>
+          <div className="relative">
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Users</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="flex space-x-4">

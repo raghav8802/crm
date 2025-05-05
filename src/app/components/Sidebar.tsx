@@ -90,9 +90,58 @@ export default function Sidebar() {
               </svg>
               Users
             </Link>
+            <Link
+              href="/verification"
+              className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
+                isActive('/verification')
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              <svg
+                className="h-6 w-6 mr-3"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Verification
+            </Link>
           </div>
         </div>
       </nav>
+      <div className="mt-auto p-4">
+        <button
+          onClick={() => {
+            // Add your logout logic here
+            window.location.href = '/api/auth/logout';
+          }}
+          className="w-full flex items-center px-4 py-3 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
+        >
+          <svg
+            className="h-6 w-6 mr-3"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          </svg>
+          Logout
+        </button>
+      </div>
     </div>
   );
 } 
