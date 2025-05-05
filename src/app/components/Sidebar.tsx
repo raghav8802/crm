@@ -10,6 +10,21 @@ export default function Sidebar() {
     return pathname === path;
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <div className="w-64 bg-gray-800 text-white min-h-screen">
       <div className="p-4">
@@ -42,6 +57,7 @@ export default function Sidebar() {
               </svg>
               Dashboard
             </Link>
+
             <Link
               href="/leads"
               className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
@@ -66,6 +82,7 @@ export default function Sidebar() {
               </svg>
               Leads
             </Link>
+
             <Link
               href="/users"
               className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
@@ -90,6 +107,7 @@ export default function Sidebar() {
               </svg>
               Users
             </Link>
+
             <Link
               href="/verification"
               className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
@@ -119,10 +137,7 @@ export default function Sidebar() {
       </nav>
       <div className="mt-auto p-4">
         <button
-          onClick={() => {
-            // Add your logout logic here
-            window.location.href = '/api/auth/logout';
-          }}
+          onClick={handleLogout}
           className="w-full flex items-center px-4 py-3 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200"
         >
           <svg

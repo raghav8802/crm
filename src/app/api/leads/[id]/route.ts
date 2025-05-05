@@ -4,56 +4,59 @@ import { Lead } from '@/models/Lead';
 import mongoose from 'mongoose';
 import { LeadThread } from '@/models/LeadThread';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type Props = {
+  params: {
+    id: string;
+  };
+};
+
+export async function GET(request: Request, props: Props) {
   try {
     await connectDB();
-    const lead = await Lead.findById(params.id);
+    const id = props.params.id;
+    
+    const lead = await Lead.findById(id);
     
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Fetch thread entries for this lead
-    const threadEntries = await LeadThread.find({ leadId: params.id }).sort({ timestamp: -1 });
+    const threadEntries = await LeadThread.find({ leadId: id }).sort({ timestamp: -1 });
     
     return NextResponse.json({
       ...lead.toObject(),
       thread: threadEntries
     });
   } catch (error) {
-    console.error('Error fetching lead:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch lead' },
-      { status: 500 }
-    );
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, props: Props) {
   try {
     await connectDB();
-    const lead = await Lead.findById(params.id);
+    const id = props.params.id;
     
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid lead ID format' },
         { status: 400 }
       );
     }
 
-    // Delete all thread entries for this lead
-    await LeadThread.deleteMany({ leadId: params.id });
+    const lead = await Lead.findById(id);
     
-    // Delete the lead
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
+
+    // Delete all thread entries for this lead
+    await LeadThread.deleteMany({ leadId: id });
+    
+    // Delete the lead
+    await Lead.findByIdAndDelete(id);
     
     return NextResponse.json({ message: 'Lead and associated threads deleted successfully' });
   } catch (error) {
@@ -65,15 +68,13 @@ export async function DELETE(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, props: Props) {
   try {
     await connectDB();
+    const id = props.params.id;
     const body = await request.json();
     
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid lead ID format' },
         { status: 400 }
@@ -81,35 +82,38 @@ export async function PUT(
     }
 
     // Get the current lead to compare changes
-    const currentLead = await Lead.findById(params.id);
+    const currentLead = await Lead.findById(id);
     if (!currentLead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Update the lead with new data
     const updatedLead = await Lead.findByIdAndUpdate(
-      params.id,
+      id,
       { ...body, updatedAt: new Date() },
       { new: true }
     );
 
+    // Use performedBy from request, fallback to 'System'
+    const performedBy = body.performedBy || 'System';
+
     // Create thread entries for changes
     if (body.status && body.status !== currentLead.status) {
       const threadEntry = new LeadThread({
-        leadId: params.id,
+        leadId: id,
         action: 'Status Update',
         details: `Status changed from ${currentLead.status} to ${body.status}`,
-        performedBy: 'System'
+        performedBy
       });
       await threadEntry.save();
     }
 
     if (body.assignedTo && body.assignedTo !== currentLead.assignedTo) {
       const threadEntry = new LeadThread({
-        leadId: params.id,
+        leadId: id,
         action: 'Assignment Update',
         details: `Assigned to ${body.assignedTo}`,
-        performedBy: 'System'
+        performedBy
       });
       await threadEntry.save();
     }
@@ -117,10 +121,10 @@ export async function PUT(
     // Handle note addition
     if (body.newNote) {
       const threadEntry = new LeadThread({
-        leadId: params.id,
+        leadId: id,
         action: 'Note Added',
         details: body.newNote,
-        performedBy: 'System'
+        performedBy
       });
       await threadEntry.save();
     }

@@ -92,7 +92,8 @@ export default function Home() {
 
   const getUserName = (userId: string | undefined) => {
     if (!userId) return 'Unassigned';
-    const user = users.find(u => u._id === userId);
+    if (!Array.isArray(users)) return 'Loading...';
+    const user = users.find(u => u._id?.toString() === userId.toString());
     return user ? user.name : 'Unassigned';
   };
 
@@ -121,30 +122,16 @@ export default function Home() {
   const pieChartData = {
     labels: stats?.assignedStats.map((stat) => {
       if (!stat._id) return 'Unassigned';
-      const user = users.find(u => u._id === stat._id);
+      if (!users?.length) return 'Loading...';
+      const user = users.find(u => u._id?.toString() === (stat._id || '').toString());
       return user ? user.name : 'Unknown User';
     }),
     datasets: [
       {
-        data: stats?.assignedStats.map((stat) => stat.count),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.5)',
-          'rgba(54, 162, 235, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(153, 102, 255, 0.5)',
-          'rgba(255, 159, 64, 0.5)',
-          'rgba(199, 199, 199, 0.5)',
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-          'rgba(199, 199, 199, 1)',
-        ],
+        label: 'Leads',
+        data: stats?.assignedStats.map((stat) => stat.count) || [],
+        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1,
       },
     ],

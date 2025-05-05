@@ -7,7 +7,7 @@ import { User, UserRole } from '@/models/User';
 export async function GET() {
   try {
     await connectDB();
-    const users = await User.find({}, { password: 0 }).sort({ createdAt: -1 });
+    const users = await User.find({}, { password: 0 });
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);

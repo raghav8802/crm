@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from '@/app/components/Sidebar';
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Gyan Education CRM",
-  description: "Customer Relationship Management for Gyan Education",
+  title: "CRM Dashboard",
+  description: "Customer Relationship Management System",
 };
 
 export default function RootLayout({
@@ -16,10 +17,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <div className="flex">
-          <Sidebar />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Sidebar />
+          </Suspense>
           <main className="flex-1 p-6">
             {children}
           </main>

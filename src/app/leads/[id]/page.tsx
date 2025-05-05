@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { LeadType } from '@/models/Lead';
 import { UserType } from '@/models/User';
 import Link from 'next/link';
@@ -27,6 +27,8 @@ export default function LeadDetailsPage() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +54,20 @@ export default function LeadDetailsPage() {
       }
     };
 
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch('/api/auth/check');
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUser(data.user);
+        }
+      } catch (e) {
+        // handle error
+      }
+    };
+
     fetchData();
+    fetchCurrentUser();
   }, [id]);
 
   const handleAssign = async () => {
@@ -71,6 +86,7 @@ export default function LeadDetailsPage() {
         body: JSON.stringify({
           ...lead,
           assignedTo: selectedUser,
+          performedBy: currentUser?.name
         }),
       });
 
@@ -81,6 +97,7 @@ export default function LeadDetailsPage() {
       const updatedLead = await res.json();
       setLead(updatedLead);
       alert('Lead assigned successfully!');
+      router.refresh();
     } catch (error) {
       console.error('Error:', error);
       alert('Error assigning lead');
@@ -105,7 +122,8 @@ export default function LeadDetailsPage() {
         body: JSON.stringify({
           ...lead,
           status: selectedStatus,
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          performedBy: currentUser?.name
         }),
       });
 
@@ -116,6 +134,7 @@ export default function LeadDetailsPage() {
       const updatedLead = await res.json();
       setLead(updatedLead);
       alert('Status updated successfully!');
+      router.refresh();
     } catch (error) {
       console.error('Error:', error);
       alert('Error updating status');
@@ -135,7 +154,8 @@ export default function LeadDetailsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          newNote: newNote.trim()
+          newNote: newNote.trim(),
+          performedBy: currentUser?.name
         }),
       });
 
@@ -146,6 +166,7 @@ export default function LeadDetailsPage() {
       const updatedLead = await res.json();
       setLead(updatedLead);
       setNewNote('');
+      router.refresh();
     } catch (error) {
       console.error('Error:', error);
       alert('Error adding note');
@@ -304,40 +325,6 @@ export default function LeadDetailsPage() {
                 )}
               </dd>
             </div>
-
-            {/* Notes Section */}
-            <div className="col-span-2">
-              <dt className="text-sm font-medium text-gray-500">Notes</dt>
-              <dd className="mt-1">
-                <div className="space-y-4">
-                  {lead?.thread?.filter(entry => entry.action === 'Note Added').map((entry, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded-md">
-                      <p className="text-sm text-gray-700">{entry.details}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Added by {entry.performedBy} on {new Date(entry.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                  <div className="mt-4">
-                    <textarea
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Add a note..."
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      rows={3}
-                    />
-                    <button
-                      onClick={handleAddNote}
-                      disabled={isAddingNote || !newNote.trim()}
-                      className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {isAddingNote ? 'Adding...' : 'Add Note'}
-                    </button>
-                  </div>
-                </div>
-              </dd>
-            </div>
-
             <div className="col-span-2">
               <dt className="text-sm font-medium text-gray-500">Assigned To</dt>
               <dd className="mt-1">
@@ -375,7 +362,9 @@ export default function LeadDetailsPage() {
             <div className="col-span-2">
               <dt className="text-sm font-medium text-gray-500">Assigned From</dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {lead?.assignedFrom || '-'}
+                {lead?.assignedFrom
+                  ? (users.find(u => u._id === lead.assignedFrom)?.name || lead.assignedFrom)
+                  : '-'}
               </dd>
             </div>
           </dl>
@@ -387,19 +376,35 @@ export default function LeadDetailsPage() {
             <h2 className="text-lg font-semibold text-gray-900">History</h2>
           </div>
 
-          <div className="space-y-4">
-            {lead?.thread?.map((entry, index) => (
-              <div key={index} className="border-l-2 border-blue-500 pl-4">
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>{entry.action}</span>
-                  <span>{new Date(entry.timestamp).toLocaleString()}</span>
+          <div className="space-y-4 overflow-y-auto" style={{ maxHeight: '400px' }}>
+            {lead?.thread?.map((entry, index) => {
+              // Try to extract assignedTo from details if present
+              let assignedToName = null;
+              if (entry.action === 'Assignment Update' && entry.details) {
+                // Example details: "Assigned to 680f30afb8245940656a4705"
+                const match = entry.details.match(/Assigned to ([a-fA-F0-9]{24})/);
+                if (match) {
+                  const user = users.find(u => u._id === match[1]);
+                  assignedToName = user ? user.name : match[1];
+                }
+              }
+              return (
+                <div key={index} className="border-l-2 border-blue-500 pl-4">
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>{entry.action}</span>
+                    <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-700">
+                    {assignedToName
+                      ? `Assigned to ${assignedToName}`
+                      : entry.details}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    By {entry.performedBy}
+                  </p>
                 </div>
-                <p className="mt-1 text-sm text-gray-700">{entry.details}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  By {entry.performedBy}
-                </p>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Initial creation entry */}
             <div className="border-l-2 border-green-500 pl-4">
@@ -410,6 +415,40 @@ export default function LeadDetailsPage() {
               <p className="mt-1 text-sm text-gray-700">Lead was created with initial details</p>
             </div>
           </div>
+       
+
+        {/* Notes Section */}
+        <div className="col-span-2 mt-3">
+          <dt className="text-sm font-medium text-gray-500 mt-5">Notes</dt>
+          <dd className="mt-1">
+            <div className="space-y-4 overflow-y-auto" style={{ maxHeight: '300px' }}>
+              {lead?.thread?.filter(entry => entry.action === 'Note Added').map((entry, index) => (
+                <div key={index} className="p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-700">{entry.details}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Added by {entry.performedBy} on {new Date(entry.timestamp).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+              <div className="mt-4">
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  rows={3}
+                />
+                <button
+                  onClick={handleAddNote}
+                  disabled={isAddingNote || !newNote.trim()}
+                  className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isAddingNote ? 'Adding...' : 'Add Note'}
+                </button>
+              </div>
+            </div>
+          </dd>
+        </div>
         </div>
       </div>
     </div>

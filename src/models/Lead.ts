@@ -29,41 +29,29 @@ export interface LeadType {
 }
 
 const leadSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  phoneNumber: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-  },
-  status: {
-    type: String,
-    enum: ['Fresh', 'Interested', 'Callback Later', 'Wrong Number', 'Won', 'Lost'],
-    default: 'Fresh',
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  notes: [{
-    type: String,
-  }],
+  name: { type: String, required: true },
+  phoneNumber: { type: String, required: true },
+  email: { type: String, required: true },
+  altNumber: { type: String, required: true },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
+  dateOfBirth: { type: String, required: true },
+  age: { type: String, required: true },
+  tabacoUser: { type: String, enum: ['yes', 'no'], required: true },
+  annualIncome: { type: String, required: true },
+  occupation: { type: String, required: true },
+  education: { type: String, enum: ['10th', '12th', 'Graduate', 'Post Graduate', 'Other'], required: true },
+  address: { type: String, required: true },
+  status: { type: String, enum: ['Fresh', 'Interested', 'Callback Later', 'Wrong Number', 'Won', 'Lost'], required: true, default: 'Fresh' },
+  notes: [{ type: String }],
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  assignedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   thread: [{
     action: String,
     details: String,
     performedBy: String,
-    timestamp: {
-      type: Date,
-      default: Date.now,
-    },
+    timestamp: { type: Date, default: Date.now },
   }],
-}, {
-  timestamps: true,
-});
+}, { timestamps: true });
 
 export const Lead = mongoose.models.Lead || mongoose.model('Lead', leadSchema);
 

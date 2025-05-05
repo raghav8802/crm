@@ -3,15 +3,45 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UserType, UserRole } from '@/models/User';
+import { useRouter } from 'next/navigation';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: UserRole.SALES_EXECUTIVE
+  });
+  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    fetchUsers();
+    checkUserAccess();
   }, []);
+
+  const checkUserAccess = async () => {
+    try {
+      const res = await fetch('/api/auth/check');
+      if (!res.ok) throw new Error('Failed to fetch user');
+      const data = await res.json();
+      
+      if (data.user.role !== UserRole.ADMIN) {
+        router.push('/dashboard'); // Redirect non-admin users
+        return;
+      }
+      
+      setCurrentUser(data.user);
+      fetchUsers();
+    } catch (err) {
+      console.error('Error checking user access:', err);
+      router.push('/login');
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -25,6 +55,61 @@ export default function UsersPage() {
       setError(err instanceof Error ? err.message : 'Failed to fetch users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEdit = (user: UserType) => {
+    setSelectedUser(user);
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDelete = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      await fetchUsers(); // Refresh the users list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    try {
+      const response = await fetch(`/api/users/${selectedUser._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      await fetchUsers(); // Refresh the users list
+      setShowEditModal(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user');
     }
   };
 
@@ -109,13 +194,13 @@ export default function UsersPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
-                    onClick={() => {/* TODO: Implement edit */}}
+                    onClick={() => handleEdit(user)}
                     className="text-blue-600 hover:text-blue-900 mr-4"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => {/* TODO: Implement delete */}}
+                    onClick={() => handleDelete(user._id)}
                     className="text-red-600 hover:text-red-900"
                   >
                     Delete
@@ -126,6 +211,81 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h2 className="text-xl font-semibold mb-4">Edit User</h2>
+            <form onSubmit={handleUpdateUser}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Password (leave blank to keep current)
+                </label>
+                <input
+                  type="password"
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Role
+                </label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value={UserRole.ADMIN}>Admin</option>
+                  <option value={UserRole.SALES_MANAGER}>Sales Manager</option>
+                  <option value={UserRole.SALES_EXECUTIVE}>Sales Executive</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                >
+                  Update
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
