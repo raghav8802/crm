@@ -2,9 +2,27 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [callbackLaterCount, setCallbackLaterCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCallbackLaterCount = async () => {
+      try {
+        const response = await fetch('/api/leads/count?status=Callback Later');
+        if (response.ok) {
+          const data = await response.json();
+          setCallbackLaterCount(data.count);
+        }
+      } catch (error) {
+        console.error('Error fetching callback later count:', error);
+      }
+    };
+
+    fetchCallbackLaterCount();
+  }, []);
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -60,27 +78,34 @@ export default function Sidebar() {
 
             <Link
               href="/leads"
-              className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
+              className={`flex items-center justify-between px-4 py-3 text-base font-medium rounded-md ${
                 isActive('/leads')
                   ? 'bg-gray-900 text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               }`}
             >
-              <svg
-                className="h-6 w-6 mr-3"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              Leads
+              <div className="flex items-center">
+                <svg
+                  className="h-6 w-6 mr-3"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                Leads
+              </div>
+              {callbackLaterCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {callbackLaterCount}
+                </span>
+              )}
             </Link>
 
             <Link

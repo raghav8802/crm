@@ -28,6 +28,8 @@ export default function LeadDetailsPage() {
   const [newNote, setNewNote] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [callbackTime, setCallbackTime] = useState('');
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,6 +71,10 @@ export default function LeadDetailsPage() {
     fetchData();
     fetchCurrentUser();
   }, [id]);
+
+  useEffect(() => {
+    setShowTimePicker(selectedStatus === 'Callback Later');
+  }, [selectedStatus]);
 
   const handleAssign = async () => {
     if (!selectedUser) {
@@ -112,9 +118,15 @@ export default function LeadDetailsPage() {
       return;
     }
 
+    if (selectedStatus === 'Callback Later' && !callbackTime) {
+      alert('Please set a callback time');
+      return;
+    }
+
     setIsUpdatingStatus(true);
     try {
-      const res = await fetch(`/api/leads/${id}`, {
+      // First update the lead status
+      const leadRes = await fetch(`/api/leads/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -123,16 +135,35 @@ export default function LeadDetailsPage() {
           ...lead,
           status: selectedStatus,
           updatedAt: new Date(),
-          performedBy: currentUser?.name
+          performedBy: currentUser?.name,
         }),
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to update status');
+      if (!leadRes.ok) {
+        throw new Error('Failed to update lead status');
       }
 
-      const updatedLead = await res.json();
+      const updatedLead = await leadRes.json();
       setLead(updatedLead);
+
+      // If status is Callback Later, create a reminder
+      if (selectedStatus === 'Callback Later') {
+        const reminderRes = await fetch('/api/reminders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            leadId: id,
+            scheduledTime: callbackTime,
+          }),
+        });
+
+        if (!reminderRes.ok) {
+          throw new Error('Failed to create reminder');
+        }
+      }
+
       alert('Status updated successfully!');
       router.refresh();
     } catch (error) {
@@ -310,6 +341,15 @@ export default function LeadDetailsPage() {
                       </option>
                     ))}
                   </select>
+                  {showTimePicker && (
+                    <input
+                      type="datetime-local"
+                      value={callbackTime}
+                      onChange={(e) => setCallbackTime(e.target.value)}
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  )}
                   <button
                     onClick={handleStatusUpdate}
                     disabled={isUpdatingStatus || selectedStatus === lead?.status}
@@ -321,6 +361,11 @@ export default function LeadDetailsPage() {
                 {lead?.status && (
                   <p className="mt-1 text-sm text-gray-500">
                     Current Status: <span className="font-medium">{lead.status}</span>
+                    {lead.callbackTime && (
+                      <span className="ml-2">
+                        (Callback scheduled for: {new Date(lead.callbackTime).toLocaleString()})
+                      </span>
+                    )}
                   </p>
                 )}
               </dd>

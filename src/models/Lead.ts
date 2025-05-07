@@ -26,6 +26,7 @@ export interface LeadType {
   }[];
   createdAt?: Date;
   updatedAt?: Date;
+  callbackTime?: Date;
 }
 
 const leadSchema = new mongoose.Schema({
