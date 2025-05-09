@@ -43,6 +43,8 @@ interface StatsData {
 
 export default function Home() {
   const [totalLeads, setTotalLeads] = useState(0);
+  const [activeLeads, setActiveLeads] = useState(0);
+  const [conversionRate, setConversionRate] = useState(0);
   const [recentLeads, setRecentLeads] = useState<LeadType[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [users, setUsers] = useState<UserType[]>([]);
@@ -61,6 +63,26 @@ export default function Home() {
           setUserName(userData.user.name || 'User');
         }
 
+        // Fetch statistics first
+        const statsRes = await fetch('/api/leads/stats');
+        const statsData = await statsRes.json();
+        setStats(statsData);
+
+        // Calculate active leads and conversion rate from stats
+        const activeCount = statsData.statusStats.reduce((sum: number, stat: StatusStat) => {
+          if (['Fresh', 'Callback Later', 'Interested'].includes(stat._id)) {
+            return sum + stat.count;
+          }
+          return sum;
+        }, 0);
+        setActiveLeads(activeCount);
+
+        // Calculate conversion rate
+        const interestedCount = statsData.statusStats.find((stat: StatusStat) => stat._id === 'Interested')?.count || 0;
+        const totalCount = statsData.statusStats.reduce((sum: number, stat: StatusStat) => sum + stat.count, 0);
+        const rate = totalCount > 0 ? Math.round((interestedCount / totalCount) * 100) : 0;
+        setConversionRate(rate);
+
         // Fetch total leads count
         const totalRes = await fetch('/api/leads');
         const totalData = await totalRes.json();
@@ -70,11 +92,6 @@ export default function Home() {
         const recentRes = await fetch('/api/leads/recent');
         const recentData = await recentRes.json();
         setRecentLeads(recentData);
-
-        // Fetch statistics
-        const statsRes = await fetch('/api/leads/stats');
-        const statsData = await statsRes.json();
-        setStats(statsData);
 
         // Fetch users
         const usersRes = await fetch('/api/users');
@@ -175,7 +192,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Active Leads</p>
-              <h3 className="text-2xl font-bold text-gray-900">236</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{activeLeads}</h3>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,8 +201,8 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">↑ 8%</span>
-            <span className="text-gray-500 text-sm ml-2">vs last month</span>
+            <span className="text-green-500 text-sm font-semibold">Active</span>
+            
           </div>
         </div>
 
@@ -193,17 +210,17 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Conversion Rate</p>
-              <h3 className="text-2xl font-bold text-gray-900">90%</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{conversionRate}%</h3>
             </div>
             <div className="bg-purple-100 p-3 rounded-full">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-                </div>
+          </div>
           <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">↑ 5%</span>
-            <span className="text-gray-500 text-sm ml-2">vs last month</span>
+            <span className="text-purple-500 text-sm font-semibold">Interested</span>
+            <span className="text-gray-500 text-sm ml-2">out of total leads</span>
           </div>
         </div>
 

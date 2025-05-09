@@ -17,7 +17,7 @@
     "@types/bcryptjs": "^3.0.0",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.9",
-    "framer-motion": "^12.6.3",
+    "framer-motion": "^12.10.5",
     "jsonwebtoken": "^9.0.2",
     "module": "^1.1.0",
     "mongoose": "^8.13.2",

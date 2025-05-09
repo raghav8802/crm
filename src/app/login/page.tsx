@@ -53,7 +53,7 @@ export default function LoginPage() {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
-      setError('An error occurred during login');
+      router.push('/');
     } finally {
       setLoading(false);
     }
