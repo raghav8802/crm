@@ -14,6 +14,9 @@ const educationOptions = [
 const statusOptions = [
   { value: 'Fresh', label: 'Fresh' },
   { value: 'Interested', label: 'Interested' },
+  { value: 'Ringing', label: 'Ringing' },
+  { value: 'Follow Up', label: 'Follow Up' },
+  { value: 'Call Disconnected', label: 'Call Disconnected' }, 
   { value: 'Callback Later', label: 'Callback Later' },
   { value: 'Wrong Number', label: 'Wrong Number' },
   { value: 'Won', label: 'Won' },

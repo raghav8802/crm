@@ -39,6 +39,8 @@ interface FormData {
 
   // Step 3
   laProposal: string;
+  laName: string;
+  laDob: string;
   age: string;
   heightFt: string;
   heightIn: string;
@@ -98,6 +100,8 @@ export default function VerificationPage() {
 
     // Step 3
     laProposal: '',
+    laName: '',
+    laDob: '',
     age: '',
     heightFt: '',
     heightIn: '',
@@ -534,6 +538,28 @@ export default function VerificationPage() {
             type="text"
             name="laProposal"
             value={formData.laProposal}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">LA Name</label>
+          <input
+            type="text"
+            name="laName"
+            value={formData.laName}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">LA Date of Birth</label>
+          <input
+            type="date"
+            name="laDob"
+            value={formData.laDob}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />

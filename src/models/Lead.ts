@@ -14,7 +14,7 @@ export interface LeadType {
   occupation?: string;
   education?: '10th' | '12th' | 'Graduate' | 'Post Graduate' | 'Other';
   address?: string;
-  status: 'Fresh' | 'Interested' | 'Callback Later' | 'Wrong Number' | 'Won' | 'Lost';
+  status: 'Fresh' | 'Interested' | 'Ringing' | 'Follow Up' | 'Call Disconnected' | 'Callback Later' | 'Wrong Number' | 'Won' | 'Lost';
   notes: string[];
   assignedTo?: string;
   assignedFrom?: string;
@@ -42,7 +42,7 @@ const leadSchema = new mongoose.Schema({
   occupation: { type: String, required: true },
   education: { type: String, enum: ['10th', '12th', 'Graduate', 'Post Graduate', 'Other'], required: true },
   address: { type: String, required: true },
-  status: { type: String, enum: ['Fresh', 'Interested', 'Callback Later', 'Wrong Number', 'Won', 'Lost'], required: true, default: 'Fresh' },
+  status: { type: String, enum: ['Fresh', 'Interested', 'Ringing', 'Follow Up', 'Call Disconnected', 'Callback Later', 'Wrong Number', 'Won', 'Lost'], required: true, default: 'Fresh' },
   notes: [{ type: String }],
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   assignedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
