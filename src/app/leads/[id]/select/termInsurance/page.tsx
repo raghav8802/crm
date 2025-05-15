@@ -785,12 +785,12 @@ export default function VerificationPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Verification Form</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Team Insurance Verification Form</h1>
           <Link
-            href={`/leads/${id}`}
+            href={`/leads/${id}/select`}
             className="text-blue-600 hover:text-blue-800"
           >
-            Back to Lead Details
+            Back to Selection
           </Link>
         </div>
 

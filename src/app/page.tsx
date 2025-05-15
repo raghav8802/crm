@@ -161,126 +161,115 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-6">
       {/* Welcome Message */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           Welcome, {userName}!
-              </h1>
-        <p className="text-gray-600 mt-2">Here's your dashboard overview</p>
+        </h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">Here's your dashboard overview</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Leads</p>
-              <h3 className="text-2xl font-bold text-gray-900">{totalLeads}</h3>
+              <p className="text-xs sm:text-sm text-gray-500">Total Leads</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{totalLeads}</h3>
             </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-blue-100 p-2 sm:p-3 rounded-full">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              </div>
-              </div>
-          <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">↑ 12%</span>
-            <span className="text-gray-500 text-sm ml-2">vs last month</span>
+            </div>
+          </div>
+          <div className="mt-2 sm:mt-4">
+            <span className="text-green-500 text-xs sm:text-sm font-semibold">↑ 12%</span>
+            <span className="text-gray-500 text-xs sm:text-sm ml-2">vs last month</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Active Leads</p>
-              <h3 className="text-2xl font-bold text-gray-900">{activeLeads}</h3>
+              <p className="text-xs sm:text-sm text-gray-500">Active Leads</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{activeLeads}</h3>
             </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-green-100 p-2 sm:p-3 rounded-full">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">Active</span>
-            
+          <div className="mt-2 sm:mt-4">
+            <span className="text-green-500 text-xs sm:text-sm font-semibold">Active</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Conversion Rate</p>
-              <h3 className="text-2xl font-bold text-gray-900">{conversionRate}%</h3>
+              <p className="text-xs sm:text-sm text-gray-500">Conversion Rate</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{conversionRate}%</h3>
             </div>
-            <div className="bg-purple-100 p-3 rounded-full">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-purple-100 p-2 sm:p-3 rounded-full">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-purple-500 text-sm font-semibold">Interested</span>
-            <span className="text-gray-500 text-sm ml-2">out of total leads</span>
+          <div className="mt-2 sm:mt-4">
+            <span className="text-purple-500 text-xs sm:text-sm font-semibold">Interested</span>
+            <span className="text-gray-500 text-xs sm:text-sm ml-2">out of total leads</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Team Members</p>
-              <h3 className="text-2xl font-bold text-gray-900">{users.length}</h3>
+              <p className="text-xs sm:text-sm text-gray-500">Team Members</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{users.length}</h3>
             </div>
-            <div className="bg-yellow-100 p-3 rounded-full">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-yellow-100 p-2 sm:p-3 rounded-full">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">Active</span>
-            <span className="text-gray-500 text-sm ml-2">team members</span>
+          <div className="mt-2 sm:mt-4">
+            <span className="text-green-500 text-xs sm:text-sm font-semibold">Active</span>
+            <span className="text-gray-500 text-xs sm:text-sm ml-2">team members</span>
           </div>
         </div>
-              </div>
+      </div>
 
       {/* Recent Leads Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-800">Recent Leads</h2>
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div className="p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Recent Leads</h2>
             <Link 
               href="/leads"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 text-sm sm:text-base"
             >
               View All
-                </Link>
-              </div>
+            </Link>
+          </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assigned To
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created At
-                </th>
+                <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Created At</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {recentLeads.map((lead) => (
                 <tr key={lead._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                     <Link 
                       href={`/leads/${lead._id}`}
                       className="text-blue-600 hover:text-blue-800"
@@ -288,10 +277,10 @@ export default function Home() {
                       {lead.name}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
                     {lead.phoneNumber}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                       ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
                         lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
@@ -302,10 +291,10 @@ export default function Home() {
                       {lead.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
                     {getUserName(lead.assignedTo)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
                     {new Date(lead.createdAt || '').toLocaleDateString()}
                   </td>
                 </tr>
@@ -316,9 +305,9 @@ export default function Home() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Leads by Status</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4">Leads by Status</h2>
           <div className="h-64">
             <Bar
               data={barChartData}
@@ -335,8 +324,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Leads by Assignee</h2>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4">Leads by Assignee</h2>
           <div className="h-64">
             <Pie
               data={pieChartData}

@@ -12,6 +12,7 @@ export default function LeadsPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importStatus, setImportStatus] = useState<{
@@ -139,7 +140,10 @@ export default function LeadsPage() {
     if (selectedUserId && lead.assignedTo !== selectedUserId) {
       return false;
     }
-    
+    // Filter by selected status if one is selected
+    if (selectedStatus && lead.status !== selectedStatus) {
+      return false;
+    }
     // Filter by search query
     const query = searchQuery.toLowerCase();
     return (
@@ -164,11 +168,11 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
-          <div className="relative w-64">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
+          <div className="relative w-full sm:w-64">
             <input
               type="text"
               placeholder="Search leads..."
@@ -187,11 +191,11 @@ export default function LeadsPage() {
               </button>
             )}
           </div>
-          <div className="relative">
+          <div className="relative w-full sm:w-48">
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Users</option>
               {users.map((user) => (
@@ -201,17 +205,32 @@ export default function LeadsPage() {
               ))}
             </select>
           </div>
+          <div className="relative w-full sm:w-48">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="Fresh">Fresh</option>
+              <option value="Interested">Interested</option>
+              <option value="Callback Later">Callback Later</option>
+              <option value="Wrong Number">Wrong Number</option>
+              <option value="Won">Won</option>
+              <option value="Lost">Lost</option>
+            </select>
+          </div>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <button
             onClick={() => setShowImportModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+            className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-green-700 text-sm sm:text-base"
           >
             Import Leads
           </button>
           <Link 
             href="/leads/add" 
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 text-sm sm:text-base"
           >
             Add New Lead
           </Link>
@@ -220,10 +239,9 @@ export default function LeadsPage() {
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-xl font-semibold mb-4">Import Leads</h2>
-            
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4">Import Leads</h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Upload Excel File
@@ -235,7 +253,6 @@ export default function LeadsPage() {
                 className="w-full px-3 py-2 border rounded-md"
               />
             </div>
-
             {importStatus && (
               <div className="mb-4">
                 <p className="text-green-600">Successfully imported: {importStatus.success}</p>
@@ -252,7 +269,6 @@ export default function LeadsPage() {
                 )}
               </div>
             )}
-
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => {
@@ -276,41 +292,29 @@ export default function LeadsPage() {
         </div>
       )}
 
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white shadow-sm rounded-lg overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Phone
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Assigned To
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredLeads.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={6} className="px-2 sm:px-6 py-4 text-center text-gray-500">
                   {searchQuery ? 'No leads found matching your search.' : 'No leads found. Click "Add New Lead" to get started.'}
                 </td>
               </tr>
             ) : (
               filteredLeads.map((lead) => (
                 <tr key={lead._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                     <Link 
                       href={`/leads/${lead._id}`}
                       className="text-blue-600 hover:text-blue-800"
@@ -318,9 +322,9 @@ export default function LeadsPage() {
                       {lead.name}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{lead.phoneNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{lead.email || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">{lead.phoneNumber}</td>
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">{lead.email || '-'}</td>
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                       ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
                         lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
@@ -331,7 +335,7 @@ export default function LeadsPage() {
                       {lead.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                     {lead.assignedTo ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                         {getUserName(lead.assignedTo)}
@@ -340,7 +344,7 @@ export default function LeadsPage() {
                       <span className="text-gray-500">Unassigned</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
                       <Link
                         href={`/leads/${lead._id}/edit`}

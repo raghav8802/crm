@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -44,11 +45,17 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-gray-800 text-white min-h-screen">
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">GoPro CRM</h1>
+    <div className="w-60 bg-gray-800 text-white min-h-screen">
+      <div className=" flex justify-left ms-7 items-center">
+        <Image
+          src="/logo.png"
+          alt="Go Pro Logo"
+          width={130}
+          height={50}
+          priority
+        />
       </div>
-      <nav className="mt-6">
+      <nav className="mt-3">
         <div className="px-4">
           <div className="space-y-2">
             <Link

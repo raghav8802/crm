@@ -23,6 +23,12 @@ const statusOptions = [
   { value: 'Lost', label: 'Lost' },
 ];
 
+const sourceOptions = [
+  { value: 'IVR', label: 'IVR' },
+  { value: 'META', label: 'META' },
+  { value: 'GOOGLE', label: 'GOOGLE' },
+];
+
 export default function AddLead() {
   const router = useRouter();
   const [users, setUsers] = useState<UserType[]>([]);
@@ -42,6 +48,7 @@ export default function AddLead() {
     status: 'Fresh',
     assignedTo: '',
     assignedFrom: '',
+    source: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -323,6 +330,24 @@ export default function AddLead() {
                 {users.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.name} ({user.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="source" className="block text-sm font-medium text-gray-700">Lead Source <span className="text-red-500">*</span></label>
+              <select
+                id="source"
+                value={formData.source}
+                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Source</option>
+                {sourceOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>

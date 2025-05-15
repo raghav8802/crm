@@ -27,6 +27,7 @@ export interface LeadType {
   createdAt?: Date;
   updatedAt?: Date;
   callbackTime?: Date;
+  source?: string;
 }
 
 const leadSchema = new mongoose.Schema({
@@ -52,6 +53,7 @@ const leadSchema = new mongoose.Schema({
     performedBy: String,
     timestamp: { type: Date, default: Date.now },
   }],
+  source: { type: String, required: false },
 }, { timestamps: true });
 
 export const Lead = mongoose.models.Lead || mongoose.model('Lead', leadSchema);
