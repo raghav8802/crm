@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LeadType } from '@/models/Lead';
 
 interface FormData {
+  // Company Selection
+  selectedCompany: string;
+  
   // Step 1
   name: string;
   mobileNo: string;
@@ -68,6 +71,9 @@ export default function VerificationPage() {
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
+    // Company Selection
+    selectedCompany: '',
+    
     // Step 1
     name: '',
     mobileNo: '',
@@ -180,22 +186,33 @@ export default function VerificationPage() {
   const handleSubmit = async () => {
     try {
       setError('');
-      const response = await fetch(`/api/leads/${id}/verification`, {
+      
+      // Create FormData object
+      const formDataToSend = new FormData();
+      
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formDataToSend.append(key, value);
+        } else if (value !== null && value !== undefined) {
+          formDataToSend.append(key, value.toString());
+        }
+      });
+
+      const response = await fetch(`/api/leads/${id}/term-insurance`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ formData }),
+        body: formDataToSend,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save form data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save form data');
       }
 
       router.push(`/leads/${id}`);
     } catch (error) {
       console.error('Error saving form:', error);
-      setError('Failed to save form data');
+      setError(error instanceof Error ? error.message : 'Failed to save form data');
     }
   };
 
@@ -801,6 +818,28 @@ export default function VerificationPage() {
         )}
 
         <div className="bg-white rounded-lg shadow-lg p-8">
+          {/* Company Selection */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Insurance Company</label>
+            <select
+              name="selectedCompany"
+              value={formData.selectedCompany}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select Company</option>
+              <option value="Aditya Birla">Aditya Birla</option>
+              <option value="Bajaj">Bajaj</option>
+              <option value="Future Generali">Future Generali</option>
+              <option value="Go Digit">Go Digit</option>
+              <option value="ICICI Prudential">ICICI Prudential</option>
+              <option value="Max Life Insurance">Max Life Insurance</option>
+              <option value="PNB Metlife">PNB Metlife</option>
+              <option value="TATA AIA">TATA AIA</option>
+            </select>
+          </div>
+
           <div className="mb-8">
             <div className="flex items-center space-x-4">
               <div className={`h-2 w-2 rounded-full ${currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />

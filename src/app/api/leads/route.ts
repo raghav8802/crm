@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       notes: [],
       assignedTo,
       assignedFrom,
+      source: body.source,
       thread: [{
         action: 'Lead Created',
         details: 'Lead was created with initial details',

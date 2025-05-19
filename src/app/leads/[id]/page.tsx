@@ -329,6 +329,11 @@ export default function LeadDetailsPage() {
               </dd>
             </div>
 
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Source</dt>
+              <dd className="mt-1 text-sm text-gray-900">{lead.source || '-'}</dd>
+            </div>
+
             <div className="col-span-2">
               <dt className="text-sm font-medium text-gray-500">Status</dt>
               <dd className="mt-1">
