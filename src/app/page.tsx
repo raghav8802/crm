@@ -50,55 +50,133 @@ export default function Home() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [chartData, setChartData] = useState({
+    labels: ['Fresh', 'Interested', 'Callback Later', 'Wrong Number', 'Won', 'Lost'],
+    datasets: [{
+      label: 'Leads by Status',
+      data: [0, 0, 0, 0, 0, 0],
+      backgroundColor: [
+        'rgba(59, 130, 246, 0.5)',  // Fresh - Blue
+        'rgba(34, 197, 94, 0.5)',   // Interested - Green
+        'rgba(234, 179, 8, 0.5)',   // Callback Later - Yellow
+        'rgba(239, 68, 68, 0.5)',   // Wrong Number - Red
+        'rgba(168, 85, 247, 0.5)',  // Won - Purple
+        'rgba(156, 163, 175, 0.5)'  // Lost - Gray
+      ],
+      borderColor: [
+        'rgb(59, 130, 246)',
+        'rgb(34, 197, 94)',
+        'rgb(234, 179, 8)',
+        'rgb(239, 68, 68)',
+        'rgb(168, 85, 247)',
+        'rgb(156, 163, 175)'
+      ],
+      borderWidth: 1,
+    }]
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch user data
+        setLoading(true);
+        // Fetch user data first
         const userRes = await fetch('/api/auth/check', {
           credentials: 'include',
         });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setUserName(userData.user.name || 'User');
+        if (!userRes.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+        const userData = await userRes.json();
+        console.log('Full User Data Response:', userData);
+        
+        if (!userData.authenticated || !userData.user || !userData.user._id) {
+          console.error('User data structure:', userData);
+          throw new Error('User data not found in response');
         }
 
-        // Fetch statistics first
-        const statsRes = await fetch('/api/leads/stats');
-        const statsData = await statsRes.json();
-        setStats(statsData);
+        const currentUserId = userData.user._id;
+        const isAdmin = userData.user.role === 'admin';
+        console.log('Current User ID:', currentUserId, 'Is Admin:', isAdmin);
+        setUserName(userData.user.name || 'User');
+        setCurrentUserId(currentUserId);
+        setIsAdmin(isAdmin);
 
-        // Calculate active leads and conversion rate from stats
-        const activeCount = statsData.statusStats.reduce((sum: number, stat: StatusStat) => {
-          if (['Fresh', 'Callback Later', 'Interested'].includes(stat._id)) {
-            return sum + stat.count;
-          }
-          return sum;
-        }, 0);
+        // Fetch all data in parallel
+        const [statsRes, totalRes, recentRes, usersRes] = await Promise.all([
+          fetch('/api/leads/stats'),
+          fetch('/api/leads'),
+          fetch('/api/leads/recent'),
+          fetch('/api/users')
+        ]);
+
+        if (!statsRes.ok || !totalRes.ok || !recentRes.ok || !usersRes.ok) {
+          throw new Error('Failed to fetch some data');
+        }
+
+        const [statsData, totalData, recentData, usersData] = await Promise.all([
+          statsRes.json(),
+          totalRes.json(),
+          recentRes.json(),
+          usersRes.json()
+        ]);
+
+        
+        console.log('Recent Leads:', recentData);
+        console.log('Current User ID:', currentUserId);
+        console.log('Is Admin:', isAdmin);
+
+        setStats(statsData);
+        setUsers(usersData);
+
+        // For admin users, show all leads. For regular users, show only assigned leads
+        const userLeads = isAdmin ? totalData : totalData.filter((lead: LeadType) => {
+          const leadAssignedTo = String(lead.assignedTo);
+          const userId = String(currentUserId);
+          const isAssigned = leadAssignedTo === userId;
+          return isAssigned;
+        });
+        console.log('Filtered User Leads:', userLeads);
+        setTotalLeads(userLeads.length);
+
+        // Calculate active leads and conversion rate from user's leads
+        const activeCount = userLeads.filter((lead: LeadType) => 
+          ['Fresh', 'Callback Later', 'Interested'].includes(lead.status)
+        ).length;
         setActiveLeads(activeCount);
 
-        // Calculate conversion rate
-        const interestedCount = statsData.statusStats.find((stat: StatusStat) => stat._id === 'Interested')?.count || 0;
-        const totalCount = statsData.statusStats.reduce((sum: number, stat: StatusStat) => sum + stat.count, 0);
-        const rate = totalCount > 0 ? Math.round((interestedCount / totalCount) * 100) : 0;
+        // Calculate conversion rate for user's leads
+        const interestedCount = userLeads.filter((lead: LeadType) => lead.status === 'Interested').length;
+        const rate = userLeads.length > 0 ? Math.round((interestedCount / userLeads.length) * 100) : 0;
         setConversionRate(rate);
 
-        // Fetch total leads count
-        const totalRes = await fetch('/api/leads');
-        const totalData = await totalRes.json();
-        setTotalLeads(totalData.length);
+        // For admin users, show all recent leads. For regular users, show only assigned recent leads
+        const userRecentLeads = recentData;
+        console.log('Recent Leads:', userRecentLeads);
+        setRecentLeads(userRecentLeads);
 
-        // Fetch recent leads
-        const recentRes = await fetch('/api/leads/recent');
-        const recentData = await recentRes.json();
-        setRecentLeads(recentData);
+        // Update chart data
+        setChartData(prev => ({
+          ...prev,
+          datasets: [{
+            ...prev.datasets[0],
+            label: isAdmin ? 'Leads by Status' : 'Your Leads by Status',
+            data: [
+              userLeads.filter((lead: LeadType) => lead.status === 'Fresh').length,
+              userLeads.filter((lead: LeadType) => lead.status === 'Interested').length,
+              userLeads.filter((lead: LeadType) => lead.status === 'Callback Later').length,
+              userLeads.filter((lead: LeadType) => lead.status === 'Wrong Number').length,
+              userLeads.filter((lead: LeadType) => lead.status === 'Won').length,
+              userLeads.filter((lead: LeadType) => lead.status === 'Lost').length,
+            ]
+          }]
+        }));
 
-        // Fetch users
-        const usersRes = await fetch('/api/users');
-        const usersData = await usersRes.json();
-        setUsers(usersData);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError('Failed to load dashboard data. Please try logging in again.');
       } finally {
         setLoading(false);
       }
@@ -155,7 +233,38 @@ export default function Home() {
   };
 
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-red-600">
+          <p>{error}</p>
+          <div className="mt-4 space-y-2">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Retry
+            </button>
+            <button 
+              onClick={() => window.location.href = '/login'} 
+              className="block w-full mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -173,7 +282,9 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-500">Total Leads</p>
+              <p className="text-xs sm:text-sm text-gray-500">
+                {isAdmin ? 'Total Leads' : 'Your Assigned Leads'}
+              </p>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{totalLeads}</h3>
             </div>
             <div className="bg-blue-100 p-2 sm:p-3 rounded-full">
@@ -183,8 +294,12 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-2 sm:mt-4">
-            <span className="text-green-500 text-xs sm:text-sm font-semibold">↑ 12%</span>
-            <span className="text-gray-500 text-xs sm:text-sm ml-2">vs last month</span>
+            <span className="text-green-500 text-xs sm:text-sm font-semibold">
+              {isAdmin ? 'All Leads' : 'Your Leads'}
+            </span>
+            <span className="text-gray-500 text-xs sm:text-sm ml-2">
+              {isAdmin ? 'in the system' : 'assigned to you'}
+            </span>
           </div>
         </div>
 
@@ -246,7 +361,9 @@ export default function Home() {
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <div className="p-4 sm:p-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Recent Leads</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+              {isAdmin ? 'Recent Leads (All Users)' : 'Your Recent Leads'}
+            </h2>
             <Link 
               href="/leads"
               className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 text-sm sm:text-base"
@@ -267,56 +384,89 @@ export default function Home() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {recentLeads.map((lead) => (
-                <tr key={lead._id} className="hover:bg-gray-50">
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
-                    <Link 
-                      href={`/leads/${lead._id}`}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      {lead.name}
-                    </Link>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
-                    {lead.phoneNumber}
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
-                        lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
-                        lead.status === 'Callback Later' ? 'bg-yellow-100 text-yellow-800' :
-                        lead.status === 'Wrong Number' ? 'bg-red-100 text-red-800' :
-                        lead.status === 'Won' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'}`}>
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
-                    {getUserName(lead.assignedTo)}
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
-                    {new Date(lead.createdAt || '').toLocaleDateString()}
+              {recentLeads.length > 0 ? (
+                recentLeads.map((lead) => (
+                  <tr key={lead._id} className="hover:bg-gray-50">
+                    <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
+                      <Link 
+                        href={`/leads/${lead._id}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        {lead.name}
+                      </Link>
+                    </td>
+                    <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
+                      {lead.phoneNumber}
+                    </td>
+                    <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
+                          lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
+                          lead.status === 'Callback Later' ? 'bg-yellow-100 text-yellow-800' :
+                          lead.status === 'Wrong Number' ? 'bg-red-100 text-red-800' :
+                          lead.status === 'Won' ? 'bg-purple-100 text-purple-800' :
+                          'bg-gray-100 text-gray-800'}`}>
+                        {lead.status}
+                      </span>
+                    </td>
+                    <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
+                      {getUserName(lead.assignedTo)}
+                    </td>
+                    <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-gray-500">
+                      {new Date(lead.createdAt || '').toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-2 sm:px-6 py-4 text-center text-gray-500">
+                    {isAdmin ? 'No recent leads found' : 'No recent leads assigned to you'}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+      <div className={`grid gap-4 sm:gap-6 ${isAdmin ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4">Leads by Status</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4">
+            {isAdmin ? 'Leads by Status' : 'Your Leads by Status'}
+          </h2>
           <div className="h-64">
             <Bar
-              data={barChartData}
+              data={chartData}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                   legend: {
                     display: false
+                  },
+                  tooltip: {
+                    callbacks: {
+                      label: function(context) {
+                        const data = context.dataset.data as number[];
+                        const total = data.reduce((sum, val) => sum + (val || 0), 0);
+                        const percentage = Math.round((context.raw as number / total) * 100);
+                        return `${context.raw} (${percentage}%)`;
+                      }
+                    }
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      callback: function(value) {
+                        const data = chartData.datasets[0].data;
+                        const total = data.reduce((sum, val) => sum + (val || 0), 0);
+                        const percentage = Math.round((Number(value) / total) * 100);
+                        return `${value} (${percentage}%)`;
+                      }
+                    }
                   }
                 }
               }}
@@ -324,23 +474,25 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4">Leads by Assignee</h2>
-          <div className="h-64">
-            <Pie
-              data={pieChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'right'
+        {isAdmin && (
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4">Leads by Assignee</h2>
+            <div className="h-64">
+              <Pie
+                data={pieChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'right'
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

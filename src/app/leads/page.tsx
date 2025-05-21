@@ -42,7 +42,13 @@ export default function LeadsPage() {
       }
       const data = await res.json();
       console.log('All Leads:', data);
-      setLeads(data);
+      
+      // Filter leads based on user role
+      const filteredLeads = currentUser?.role === 'admin' 
+        ? data 
+        : data.filter((lead: LeadType) => String(lead.assignedTo) === String(currentUser?._id));
+      
+      setLeads(filteredLeads);
     } catch (err) {
       setError('Error loading leads');
       console.error('Error:', err);
@@ -72,6 +78,13 @@ export default function LeadsPage() {
   useEffect(() => {
     if (currentUser?._id) {
       setSelectedUserId(currentUser._id);
+    }
+  }, [currentUser]);
+
+  // Update leads when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchLeads();
     }
   }, [currentUser]);
 
@@ -171,7 +184,10 @@ export default function LeadsPage() {
     <div className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
+            <span className="text-sm text-gray-600">Total: {filteredLeads.length}</span>
+          </div>
           <div className="relative w-full sm:w-64">
             <input
               type="text"
@@ -191,20 +207,22 @@ export default function LeadsPage() {
               </button>
             )}
           </div>
-          <div className="relative w-full sm:w-48">
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Users</option>
-              {users.map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {currentUser?.role === 'admin' && (
+            <div className="relative w-full sm:w-48">
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Users</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="relative w-full sm:w-48">
             <select
               value={selectedStatus}
