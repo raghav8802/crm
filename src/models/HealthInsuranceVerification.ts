@@ -58,6 +58,16 @@ export interface IHealthInsuranceVerification extends Document {
   nomineeRelation: string;
   nomineeDOB: string;
 
+  // Remarks
+  remarks: Array<{
+    text: string;
+    user: string;
+    timestamp: Date;
+  }>;
+
+  // PLVC Verification Video
+  plvcVideo?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -122,7 +132,17 @@ const HealthInsuranceVerificationSchema = new Schema({
   // Nominee Details
   nomineeName: { type: String, required: true },
   nomineeRelation: { type: String, required: true },
-  nomineeDOB: { type: String, required: true }
+  nomineeDOB: { type: String, required: true },
+
+  // Remarks
+  remarks: [{
+    text: { type: String, required: true },
+    user: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now }
+  }],
+
+  // PLVC Verification Video
+  plvcVideo: { type: String },
 }, {
   timestamps: true
 });

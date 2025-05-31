@@ -14,7 +14,7 @@ interface InsuredPerson {
   height: string;
   weight: string;
   aadharNumber: string;
-  aadharPhoto: File | null;
+  aadharPhoto: string | null;
   medicalHistory: string;
   preExistingDisease: string;
   bpDiabetes: string;
@@ -25,7 +25,7 @@ interface InsuredPerson {
   drinking: 'Yes' | 'No';
   smoking: 'Yes' | 'No';
   chewing: 'Yes' | 'No';
-  medicalDocuments: File[];
+  medicalDocuments: string[];
 }
 
 interface FormData {
@@ -101,13 +101,26 @@ interface FormData {
   panNumber: string;
   panPhoto: File | null;
   aadharNumber: string;
-  aadharPhoto: File | null;
+  aadharPhoto: string | null;
   userPhoto: File | null;
   cancelledCheque: File | null;
   bankStatement: File | null;
 
   // Step 3 - Insured Persons
   insuredPersons: InsuredPerson[];
+}
+
+// Helper function to upload a file and return the path
+async function uploadHealthFile(file: File, leadId: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`/api/leads/${leadId}/health-insurance/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) throw new Error('Failed to upload file');
+  const data = await res.json();
+  return data.fileUrl;
 }
 
 export default function VerificationPage() {
@@ -357,14 +370,36 @@ export default function VerificationPage() {
     }));
   };
 
-  const handleMedicalDocumentUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInsuredPersonAadharPhotoChange = async (index: number, file: File | null) => {
+    if (!file) return;
+    try {
+      const fileUrl = await uploadHealthFile(file, id as string);
+      setFormData(prev => ({
+        ...prev,
+        insuredPersons: prev.insuredPersons.map((person, i) =>
+          i === index ? { ...person, aadharPhoto: fileUrl } : person
+        )
+      }));
+    } catch (err) {
+      alert('Failed to upload Aadhar photo');
+    }
+  };
+
+  const handleMedicalDocumentUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setFormData(prev => ({
-      ...prev,
-      insuredPersons: prev.insuredPersons.map((person, i) => 
-        i === index ? { ...person, medicalDocuments: [...person.medicalDocuments, ...files] } : person
-      )
-    }));
+    try {
+      const uploadedUrls = await Promise.all(
+        files.map(file => uploadHealthFile(file, id as string))
+      );
+      setFormData(prev => ({
+        ...prev,
+        insuredPersons: prev.insuredPersons.map((person, i) =>
+          i === index ? { ...person, medicalDocuments: [...person.medicalDocuments, ...uploadedUrls] } : person
+        )
+      }));
+    } catch (err) {
+      alert('Failed to upload medical document(s)');
+    }
   };
 
   const removeMedicalDocument = (personIndex: number, docIndex: number) => {
@@ -387,18 +422,7 @@ export default function VerificationPage() {
       className="space-y-4"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700"> Manufacturer Name</label>
-          <input
-            type="text"
-            name="manufacturerName"
-            value={formData.manufacturerName}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="remove it "
-            disabled
-          />
-        </div>
+       
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Plan Name</label>
@@ -752,7 +776,7 @@ export default function VerificationPage() {
           <input
                 type="file"
                 accept="image/*,.pdf"
-                onChange={(e) => handleInsuredPersonChange(index, 'aadharPhoto', e.target.files?.[0] || null)}
+                onChange={(e) => handleInsuredPersonAadharPhotoChange(index, e.target.files?.[0] || null)}
                 className="mt-1 block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-md file:border-0
@@ -919,9 +943,7 @@ export default function VerificationPage() {
                     <ul className="space-y-2">
                       {person.medicalDocuments.map((doc, docIndex) => (
                         <li key={docIndex} className="flex items-center justify-between bg-white p-2 rounded-md">
-                          <span className="text-sm text-gray-600 truncate max-w-xs">
-                            {doc.name}
-                          </span>
+                          <a href={doc} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline truncate max-w-xs">{doc.split('/').pop()}</a>
                           <button
                             type="button"
                             onClick={() => removeMedicalDocument(index, docIndex)}
