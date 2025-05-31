@@ -38,8 +38,14 @@ export default function SelectInsuranceType() {
   const handleSelect = (type: string) => {
     if (type === 'team') {
       router.push(`/leads/${id}/select/termInsurance`);
+    } else if (type === 'car') {
+      router.push(`/leads/${id}/select/carinsurance`);
+    } else if (type === 'health') {
+      router.push(`/leads/${id}/select/Healthinsurance`);
+    } else if (type === 'life') {
+      router.push(`/leads/${id}/select/lifeinsurance`);
     } else {
-      // For now, just show an alert for health and car options
+      // For now, just show an alert for health and life options
       alert(`${type} insurance form will be available soon!`);
     }
   };

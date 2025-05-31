@@ -7,8 +7,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LeadType } from '@/models/Lead';
 
 interface FormData {
+  // Initial Selection
+  residentialStatus: 'Indian' | 'NRI';
+  nationality: 'Indian' | 'NRI';
+  policyFor: 'Self' | 'Dependent' | 'Business';
+  
   // Company Selection
   selectedCompany: string;
+  
+  // Product Details
+  productName: string;
+  pt: string;
+  ppt: string;
+  planVariant: string;
+  sumAssured: string;
+  isSmoker: 'Yes' | 'No';
+  modeOfPayment: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
+  premiumPaymentMethod: 'Single' | 'Regular' | 'Pay Till 60' | 'Limited Pay';
   
   // Step 1
   name: string;
@@ -17,7 +32,7 @@ interface FormData {
   email: string;
   dateOfBirth: string;
   education: string;
-  occupation: 'Job' | 'Business' | 'Self Employed' | 'Student' | 'Housewife';
+  occupation: 'Job' | 'Business' | 'Self Employed' | 'Student' | 'Housewife' | 'Other';
   organizationName: string;
   workBelongsTo: string;
   annualIncome: string;
@@ -51,7 +66,6 @@ interface FormData {
   designation: string;
   existingPolicy: string;
   premiumAmount: string;
-  remarks: string;
 
   // Step 4
   panNumber: string;
@@ -61,6 +75,7 @@ interface FormData {
   userPhoto: File | null;
   cancelledCheque: File | null;
   bankStatement: File | null;
+  otherDocument: File | null;
 }
 
 export default function VerificationPage() {
@@ -69,10 +84,25 @@ export default function VerificationPage() {
   const [lead, setLead] = useState<LeadType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({
+    // Initial Selection
+    residentialStatus: 'Indian',
+    nationality: 'Indian',
+    policyFor: 'Self',
+    
     // Company Selection
     selectedCompany: '',
+    
+    // Product Details
+    productName: '',
+    pt: '',
+    ppt: '',
+    planVariant: '',
+    sumAssured: '',
+    isSmoker: 'No',
+    modeOfPayment: 'Annual',
+    premiumPaymentMethod: 'Regular',
     
     // Step 1
     name: '',
@@ -115,7 +145,6 @@ export default function VerificationPage() {
     designation: '',
     existingPolicy: '',
     premiumAmount: '',
-    remarks: '',
 
     // Step 4
     panNumber: '',
@@ -125,6 +154,7 @@ export default function VerificationPage() {
     userPhoto: null,
     cancelledCheque: null,
     bankStatement: null,
+    otherDocument: null,
   });
 
   const fetchData = useCallback(async () => {
@@ -190,11 +220,13 @@ export default function VerificationPage() {
       // Create FormData object
       const formDataToSend = new FormData();
       
-      // Add all form fields
+      // Add all form fields that have values
       Object.entries(formData).forEach(([key, value]) => {
         if (value instanceof File) {
-          formDataToSend.append(key, value);
-        } else if (value !== null && value !== undefined) {
+          if (value) { // Only append if file exists
+            formDataToSend.append(key, value);
+          }
+        } else if (value !== null && value !== undefined && value !== '') {
           formDataToSend.append(key, value.toString());
         }
       });
@@ -216,6 +248,172 @@ export default function VerificationPage() {
     }
   };
 
+  const renderInitialStep = () => (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-4"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Residential Status</label>
+          <select
+            name="residentialStatus"
+            value={formData.residentialStatus}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Select Status</option>
+            <option value="Indian">Indian</option>
+            <option value="NRI">NRI</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Nationality</label>
+          <select
+            name="nationality"
+            value={formData.nationality}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Select Nationality</option>
+            <option value="Indian">Indian</option>
+            <option value="NRI">NRI</option>
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700">Policy For</label>
+          <select
+            name="policyFor"
+            value={formData.policyFor}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Select Policy Type</option>
+            <option value="Self">Self</option>
+            <option value="Dependent">Dependent</option>
+            <option value="Business">Business Insurance</option>
+          </select>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  const renderProductDetails = () => (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-4"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Product Name</label>
+          <input
+            type="text"
+            name="productName"
+            value={formData.productName}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">PT</label>
+          <input
+            type="text"
+            name="pt"
+            value={formData.pt}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">PPT</label>
+          <input
+            type="text"
+            name="ppt"
+            value={formData.ppt}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Plan Variant</label>
+          <input
+            type="text"
+            name="planVariant"
+            value={formData.planVariant}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Sum Assured</label>
+          <input
+            type="text"
+            name="sumAssured"
+            value={formData.sumAssured}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Smoker?</label>
+          <select
+            name="isSmoker"
+            value={formData.isSmoker}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Mode of Payment</label>
+          <select
+            name="modeOfPayment"
+            value={formData.modeOfPayment}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Select Mode</option>
+            <option value="Annual">Annual</option>
+            <option value="Semi Annual">Semi Annual</option>
+            <option value="Quarterly">Quarterly</option>
+            <option value="Monthly">Monthly</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Premium Payment Method</label>
+          <select
+            name="premiumPaymentMethod"
+            value={formData.premiumPaymentMethod}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Select Method</option>
+            <option value="Regular">Regular</option>
+            <option value="Single">Single</option>
+            <option value="Pay Till 60">Pay Till 60</option>
+            <option value="Limited Pay">Limited Pay</option>
+          </select>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   const renderStep1 = () => (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -225,7 +423,7 @@ export default function VerificationPage() {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Full Name</label>
+          <label className="block text-sm font-medium text-gray-700">Policy Holder Name</label>
           <input
             type="text"
             name="name"
@@ -304,11 +502,13 @@ export default function VerificationPage() {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
+            <option value="">Select Occupation</option>
             <option value="Job">Job</option>
             <option value="Business">Business</option>
             <option value="Self Employed">Self Employed</option>
             <option value="Student">Student</option>
             <option value="Housewife">Housewife</option>
+            <option value="Other">Other</option>
           </select>
         </div>
 
@@ -386,6 +586,7 @@ export default function VerificationPage() {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
+            <option value="">Select Status</option>
             <option value="Single">Single</option>
             <option value="Married">Married</option>
           </select>
@@ -443,6 +644,7 @@ export default function VerificationPage() {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
+            <option value="">Select Status</option>
             <option value="Alive">Alive</option>
             <option value="Dead">Dead</option>
           </select>
@@ -478,6 +680,7 @@ export default function VerificationPage() {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
+            <option value="">Select Status</option>
             <option value="Alive">Alive</option>
             <option value="Dead">Dead</option>
           </select>
@@ -658,17 +861,6 @@ export default function VerificationPage() {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Remarks</label>
-          <textarea
-            name="remarks"
-            value={formData.remarks}
-            onChange={(e) => handleInputChange(e as any)}
-            rows={3}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
       </div>
     </motion.div>
   );
@@ -734,7 +926,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">User Photo</label>
+          <label className="block text-sm font-medium text-gray-700">Photo</label>
           <input
             type="file"
             accept="image/*"
@@ -777,6 +969,21 @@ export default function VerificationPage() {
               hover:file:bg-blue-100"
           />
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Other Document</label>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(e) => handleFileChange(e, 'otherDocument')}
+            className="mt-1 block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-semibold
+              file:bg-blue-50 file:text-blue-700
+              hover:file:bg-blue-100"
+          />
+        </div>
       </div>
     </motion.div>
   );
@@ -802,7 +1009,7 @@ export default function VerificationPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Team Insurance Verification Form</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Term Insurance Verification Form</h1>
           <Link
             href={`/leads/${id}/select`}
             className="text-blue-600 hover:text-blue-800"
@@ -826,38 +1033,41 @@ export default function VerificationPage() {
               value={formData.selectedCompany}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
             >
               <option value="">Select Company</option>
-              <option value="Aditya Birla">Aditya Birla</option>
-              <option value="Bajaj">Bajaj</option>
-              <option value="Future Generali">Future Generali</option>
-              <option value="Go Digit">Go Digit</option>
-              <option value="ICICI Prudential">ICICI Prudential</option>
-              <option value="Max Life Insurance">Max Life Insurance</option>
-              <option value="PNB Metlife">PNB Metlife</option>
-              <option value="TATA AIA">TATA AIA</option>
+              <option value="Aditya Birlasun sun life">Aditya Birla sun life</option>
+              <option value="Bajaj Allianz life ">Bajaj Allianz life</option>
+              <option value="Future Generali India Life Insurance">Future Generali India Life Insurance</option>
+              <option value="Digit Insurance">Digit Insurance</option>
+              <option value="ICICI Prudential Life Insurance">ICICI Prudential Life Insurance</option>
+              <option value="Axis Max Life Insurance">Axis Max Life Insurance</option>
+              <option value="PNB Metlife Insurance">PNB Metlife Insurance</option>
+              <option value="Tata AIA Life Insurance">Tata AIA Life Insurance</option>
             </select>
           </div>
 
           <div className="mb-8">
             <div className="flex items-center space-x-4">
+              <div className={`h-2 w-2 rounded-full ${currentStep >= 0 ? 'bg-blue-600' : 'bg-gray-300'}`} />
               <div className={`h-2 w-2 rounded-full ${currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
               <div className={`h-2 w-2 rounded-full ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`} />
               <div className={`h-2 w-2 rounded-full ${currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`} />
               <div className={`h-2 w-2 rounded-full ${currentStep >= 4 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              <div className={`h-2 w-2 rounded-full ${currentStep >= 5 ? 'bg-blue-600' : 'bg-gray-300'}`} />
             </div>
           </div>
 
           <AnimatePresence mode="wait">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
+            {currentStep === 0 && renderInitialStep()}
+            {currentStep === 1 && renderProductDetails()}
+            {currentStep === 2 && renderStep1()}
+            {currentStep === 3 && renderStep2()}
+            {currentStep === 4 && renderStep3()}
+            {currentStep === 5 && renderStep4()}
           </AnimatePresence>
 
           <div className="mt-8 flex justify-between">
-            {currentStep > 1 && (
+            {currentStep > 0 && (
               <button
                 onClick={prevStep}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
@@ -866,10 +1076,10 @@ export default function VerificationPage() {
               </button>
             )}
             <button
-              onClick={currentStep === 4 ? handleSubmit : nextStep}
+              onClick={currentStep === 5 ? handleSubmit : nextStep}
               className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              {currentStep === 4 ? 'Submit' : 'Next'}
+              {currentStep === 5 ? 'Submit' : 'Next'}
             </button>
           </div>
         </div>

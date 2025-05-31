@@ -10,7 +10,7 @@ export default function NewUserPage() {
     name: '',
     email: '',
     password: '',
-    role: UserRole.SALES_EXECUTIVE
+    role: UserRole.SALES_MANAGER
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,7 +89,9 @@ export default function NewUserPage() {
           >
             <option value={UserRole.ADMIN}>Admin</option>
             <option value={UserRole.SALES_MANAGER}>Sales Manager</option>
-            <option value={UserRole.SALES_EXECUTIVE}>Sales Executive</option>
+            <option value={UserRole.PAYMENT_COORDINATOR}>Payment Coordinator</option>
+            <option value={UserRole.PLVC_VERIFICATOR}>PLVC Verificator</option>
+            <option value={UserRole.MIS}>MIS</option>
           </select>
         </div>
 

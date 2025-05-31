@@ -8,8 +8,21 @@ import Image from 'next/image';
 export default function Sidebar() {
   const pathname = usePathname();
   const [callbackLaterCount, setCallbackLaterCount] = useState(0);
+  const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/check');
+        if (response.ok) {
+          const data = await response.json();
+          setUserRole(data.user.role);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
     const fetchCallbackLaterCount = async () => {
       try {
         const response = await fetch('/api/leads/count?status=Callback Later');
@@ -22,6 +35,7 @@ export default function Sidebar() {
       }
     };
 
+    fetchUserData();
     fetchCallbackLaterCount();
   }, []);
 
@@ -58,40 +72,15 @@ export default function Sidebar() {
       <nav className="mt-3">
         <div className="px-4">
           <div className="space-y-2">
-            <Link
-              href="/"
-              className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
-                isActive('/')
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
-            >
-              <svg
-                className="h-6 w-6 mr-3"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            {(userRole === 'admin' || userRole === 'sales_manager') && (
+              <Link
+                href="/"
+                className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
+                  isActive('/')
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-              Dashboard
-            </Link>
-
-            <Link
-              href="/leads"
-              className={`flex items-center justify-between px-4 py-3 text-base font-medium rounded-md ${
-                isActive('/leads')
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center">
                 <svg
                   className="h-6 w-6 mr-3"
                   xmlns="http://www.w3.org/2000/svg"
@@ -103,42 +92,73 @@ export default function Sidebar() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                   />
                 </svg>
-                Leads
-              </div>
-              {callbackLaterCount > 0 && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {callbackLaterCount}
-                </span>
-              )}
-            </Link>
+                Dashboard
+              </Link>
+            )}
 
-            <Link
-              href="/users"
-              className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
-                isActive('/users')
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
-            >
-              <svg
-                className="h-6 w-6 mr-3"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            {(userRole === 'admin' || userRole === 'sales_manager' || userRole === 'payment_coordinator') && (
+              <Link
+                href="/leads"
+                className={`flex items-center justify-between px-4 py-3 text-base font-medium rounded-md ${
+                  isActive('/leads')
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-              Users
-            </Link>
+                <div className="flex items-center">
+                  <svg
+                    className="h-6 w-6 mr-3"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  Leads
+                </div>
+                {callbackLaterCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    {callbackLaterCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {userRole === 'admin' && (
+              <Link
+                href="/users"
+                className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
+                  isActive('/users')
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <svg
+                  className="h-6 w-6 mr-3"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+                Users
+              </Link>
+            )}
 
             <Link
               href="/verification"
@@ -164,6 +184,33 @@ export default function Sidebar() {
               </svg>
               Verification
             </Link>
+
+            {userRole === 'admin' && (
+              <Link
+                href="/validation"
+                className={`flex items-center px-4 py-3 text-base font-medium rounded-md ${
+                  isActive('/validation')
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <svg
+                  className="h-6 w-6 mr-3"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
+                </svg>
+                Validation
+              </Link>
+            )}
           </div>
         </div>
       </nav>

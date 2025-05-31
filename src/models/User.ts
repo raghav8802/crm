@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 export enum UserRole {
   ADMIN = 'admin',
   SALES_MANAGER = 'sales_manager',
-  SALES_EXECUTIVE = 'sales_executive'
+  PAYMENT_COORDINATOR = 'Payment_Coordinator',
+  PLVC_VERIFICATOR = 'PLVC_verificator',
+  MIS = 'MIS'
 }
 
 export interface UserType {
@@ -42,9 +44,9 @@ const userSchema = new mongoose.Schema({
 // Check if the model exists before creating it
 let User: mongoose.Model<UserType>;
 try {
-  User = mongoose.model('User');
+  User = mongoose.model('User') as mongoose.Model<UserType>;
 } catch {
-  User = mongoose.model('User', userSchema);
+  User = mongoose.model<UserType>('User', userSchema);
 }
 
 export { User }; 

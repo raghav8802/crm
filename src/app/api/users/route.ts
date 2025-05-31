@@ -7,7 +7,8 @@ import { User, UserRole } from '@/models/User';
 export async function GET() {
   try {
     await connectDB();
-    const users = await User.find({}, { password: 0 });
+    const users = await User.find({}, { password: 0 })
+      .sort({ createdAt: -1 }); // Sort by newest first
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -30,10 +31,27 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters long' },
+        { status: 400 }
+      );
+    }
+
     // Validate role
     if (!Object.values(UserRole).includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role' },
+        { error: `Invalid role. Must be one of: ${Object.values(UserRole).join(', ')}` },
         { status: 400 }
       );
     }
@@ -45,7 +63,7 @@ export async function POST(request: Request) {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User already exists' },
+        { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
@@ -65,7 +83,7 @@ export async function POST(request: Request) {
     const userObj = user.toObject();
     const { password: userPassword, ...userWithoutPassword } = userObj;
 
-    return NextResponse.json(userWithoutPassword);
+    return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
     return NextResponse.json(

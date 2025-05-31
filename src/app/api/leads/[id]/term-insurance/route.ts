@@ -1,177 +1,139 @@
-import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import { TermInsurance } from '@/models/TermInsurance';
-import mongoose from 'mongoose';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
-
-// Function to ensure directory exists
-async function ensureDirectoryExists(dirPath: string) {
-  try {
-    await mkdir(dirPath, { recursive: true });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
-      throw error;
-    }
-  }
-}
+import { NextRequest, NextResponse } from 'next/server';
+import  connectDB  from '@/lib/db';
+import TermInsuranceVerification from '@/models/TermInsuranceVerification';
+import { uploadFile } from '@/utils/fileUpload';
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     await connectDB();
+
     const formData = await request.formData();
     const leadId = params.id;
 
-    // Validate lead ID
-    if (!mongoose.Types.ObjectId.isValid(leadId)) {
-      return NextResponse.json(
-        { error: 'Invalid lead ID' },
-        { status: 400 }
-      );
+    // Handle file uploads
+    const fileFields = [
+      'panPhoto',
+      'aadharPhoto',
+      'userPhoto',
+      'cancelledCheque',
+      'bankStatement',
+      'otherDocument'
+    ];
+
+    const uploadedFiles: { [key: string]: string } = {};
+
+    for (const field of fileFields) {
+      const file = formData.get(field) as File;
+      if (file) {
+        const filePath = await uploadFile(file, leadId, field);
+        uploadedFiles[field] = filePath;
+      }
     }
 
-    // Handle file uploads
-    const files = {
-      panPhoto: formData.get('panPhoto') as File,
-      aadharPhoto: formData.get('aadharPhoto') as File,
-      userPhoto: formData.get('userPhoto') as File,
-      cancelledCheque: formData.get('cancelledCheque') as File,
-      bankStatement: formData.get('bankStatement') as File,
+    // Build verificationData, skipping file fields
+    const verificationData: Record<string, any> = {
+      leadId,
+      status: 'submitted',
+      insuranceType: 'term_insurance',
+      ...uploadedFiles
     };
 
-    // Create base directory for uploads
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', leadId);
-    await ensureDirectoryExists(uploadsDir);
-
-    // Upload files locally and get URLs
-    const fileUrls: Record<string, string> = {};
-    for (const [key, file] of Object.entries(files)) {
-      if (file) {
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `${key}-${Date.now()}.${fileExtension}`;
-        const filePath = path.join(uploadsDir, fileName);
-
-        // Convert File to Buffer
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        // Write file to disk
-        await writeFile(filePath, buffer);
-
-        // Store relative URL for database
-        fileUrls[key] = `/uploads/${leadId}/${fileName}`;
+    for (const [key, value] of formData.entries()) {
+      if (!fileFields.includes(key)) {
+        verificationData[key] = value;
       }
     }
 
-    // Extract other form data
-    const formDataObj: Record<string, any> = {};
-    formData.forEach((value, key) => {
-      if (!key.includes('Photo') && key !== 'cancelledCheque' && key !== 'bankStatement') {
-        formDataObj[key] = value;
-      }
+    // Create new verification record
+    const verification = await TermInsuranceVerification.create(verificationData);
+
+    return NextResponse.json({
+      success: true,
+      data: verification
     });
 
-    // Create new term insurance record
-    const termInsurance = new TermInsurance({
-      leadId,
-      ...formDataObj,
-      ...fileUrls,
-      status: 'Submitted'
-    });
-
-    await termInsurance.save();
-
-    return NextResponse.json(termInsurance, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating term insurance:', error);
-    if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
+  } catch (error) {
+    console.error('Error in term insurance verification:', error);
     return NextResponse.json(
-      { error: 'Failed to create term insurance record' },
+      { error: 'Failed to process term insurance verification' },
       { status: 500 }
     );
   }
 }
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
 
-    // Validate lead ID
-    if (!mongoose.Types.ObjectId.isValid(leadId)) {
+    const verification = await TermInsuranceVerification.findOne({
+      leadId: params.id
+    });
+
+    if (!verification) {
       return NextResponse.json(
-        { error: 'Invalid lead ID' },
-        { status: 400 }
-      );
-    }
-
-    // Find term insurance record for the lead
-    const termInsurance = await TermInsurance.findOne({ leadId });
-
-    if (!termInsurance) {
-      return NextResponse.json(
-        { error: 'Term insurance record not found' },
+        { error: 'Term insurance verification not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(termInsurance);
+    return NextResponse.json({
+      success: true,
+      data: verification
+    });
+
   } catch (error) {
-    console.error('Error fetching term insurance:', error);
+    console.error('Error fetching term insurance verification:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch term insurance record' },
+      { error: 'Failed to fetch term insurance verification' },
       { status: 500 }
     );
   }
 }
 
-export async function PATCH(
-  request: Request,
+export async function PUT(
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     await connectDB();
     const leadId = params.id;
-    const body = await request.json();
+    const updateData = await request.json();
 
-    // Validate lead ID
-    if (!mongoose.Types.ObjectId.isValid(leadId)) {
-      return NextResponse.json(
-        { error: 'Invalid lead ID' },
-        { status: 400 }
-      );
+    let updateOps: any = {};
+    if (updateData.newRemark) {
+      updateOps.$push = { remarks: updateData.newRemark };
+    }
+    const fieldsToUpdate = { ...updateData };
+    delete fieldsToUpdate.newRemark;
+    delete fieldsToUpdate.remarks;
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      updateOps.$set = fieldsToUpdate;
     }
 
-    // Find and update term insurance record
-    const termInsurance = await TermInsurance.findOneAndUpdate(
+    const verification = await TermInsuranceVerification.findOneAndUpdate(
       { leadId },
-      { status: body.status },
+      updateOps,
       { new: true }
     );
 
-    if (!termInsurance) {
+    if (!verification) {
       return NextResponse.json(
-        { error: 'Term insurance record not found' },
+        { error: 'Verification not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(termInsurance);
+    return NextResponse.json({ success: true, data: verification });
   } catch (error) {
-    console.error('Error updating term insurance:', error);
+    console.error('Error updating term insurance verification:', error);
     return NextResponse.json(
-      { error: 'Failed to update term insurance record' },
+      { error: 'Failed to update verification' },
       { status: 500 }
     );
   }

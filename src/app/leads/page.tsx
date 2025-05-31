@@ -185,7 +185,7 @@ export default function LeadsPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <div className="flex flex-col">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
             <span className="text-sm text-gray-600">Total: {filteredLeads.length}</span>
           </div>
           <div className="relative w-full sm:w-64">
@@ -208,20 +208,20 @@ export default function LeadsPage() {
             )}
           </div>
           {currentUser?.role === 'admin' && (
-            <div className="relative w-full sm:w-48">
-              <select
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Users</option>
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="relative w-full sm:w-48">
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Users</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </div>
           )}
           <div className="relative w-full sm:w-48">
             <select

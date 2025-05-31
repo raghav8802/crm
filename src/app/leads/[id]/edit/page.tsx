@@ -22,6 +22,7 @@ export default function EditLead({ params }: { params: { id: string } }) {
     { value: 'IVR', label: 'IVR' },
     { value: 'META', label: 'META' },
     { value: 'GOOGLE', label: 'GOOGLE' },
+    { value: 'SELF', label: 'SELF' },
   ];
 
   useEffect(() => {

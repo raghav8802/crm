@@ -27,6 +27,7 @@ const sourceOptions = [
   { value: 'IVR', label: 'IVR' },
   { value: 'META', label: 'META' },
   { value: 'GOOGLE', label: 'GOOGLE' },
+  { value: 'SELF', label: 'SELF' },
 ];
 
 export default function AddLead() {

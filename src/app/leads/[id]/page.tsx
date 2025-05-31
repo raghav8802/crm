@@ -168,7 +168,13 @@ export default function LeadDetailsPage() {
       }
 
       alert('Status updated successfully!');
-      router.refresh();
+      
+      // Redirect to /leads/[id]/select if status is Won
+      if (selectedStatus === 'Won') {
+        router.push(`/leads/${id}/select`);
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error('Error:', error);
       alert('Error updating status');
