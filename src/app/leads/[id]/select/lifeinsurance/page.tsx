@@ -342,22 +342,22 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">PT</label>
+          <label className="block text-sm font-medium text-gray-700">PPT</label>
           <input
-            type="text"
-            name="pt"
-            value={formData.pt}
+            type="number"
+            name="ppt"
+            value={formData.ppt}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">PPT</label>
+          <label className="block text-sm font-medium text-gray-700">PT</label>
           <input
-            type="text"
-            name="ppt"
-            value={formData.ppt}
+            type="number"
+            name="pt"
+            value={formData.pt}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
@@ -377,7 +377,7 @@ export default function LifeInsurancePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Premium</label>
           <input
-            type="text"
+            type="number"
             name="premium"
             value={formData.premium}
             onChange={handleInputChange}
@@ -493,7 +493,7 @@ export default function LifeInsurancePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
           <input
-            type="tel"
+            type="number"
             name="mobileNo"
             value={formData.mobileNo}
             onChange={handleInputChange}
@@ -504,7 +504,7 @@ export default function LifeInsurancePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Alternate Number</label>
           <input
-            type="tel"
+            type="number"
             name="alternateNo"
             value={formData.alternateNo}
             onChange={handleInputChange}
@@ -593,7 +593,7 @@ export default function LifeInsurancePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Annual Income</label>
           <input
-            type="text"
+            type="number"
             name="annualIncome"
             value={formData.annualIncome}
             onChange={handleInputChange}
@@ -604,7 +604,7 @@ export default function LifeInsurancePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Years of Working</label>
           <input
-            type="text"
+            type="number"
             name="yearsOfWorking"
             value={formData.yearsOfWorking}
             onChange={handleInputChange}
@@ -907,7 +907,7 @@ export default function LifeInsurancePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Premium Amount</label>
           <input
-            type="text"
+            type="number"
             name="premiumAmount"
             value={formData.premiumAmount}
             onChange={handleInputChange}
@@ -969,7 +969,7 @@ export default function LifeInsurancePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Aadhaar Number</label>
             <input
-              type="text"
+              type="number"
               name="proposerAadharNumber"
               value={formData.proposerAadharNumber}
               onChange={handleInputChange}
@@ -1087,7 +1087,7 @@ export default function LifeInsurancePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Aadhaar Number</label>
             <input
-              type="text"
+              type="number"
               name="laAadharNumber"
               value={formData.laAadharNumber}
               onChange={handleInputChange}

@@ -321,23 +321,25 @@ export default function VerificationPage() {
           />
         </div>
 
+        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700">PT</label>
+          <label className="block text-sm font-medium text-gray-700">PPT</label>
           <input
-            type="text"
-            name="pt"
-            value={formData.pt}
+            type="number"
+            name="ppt"
+            value={formData.ppt}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">PPT</label>
+          <label className="block text-sm font-medium text-gray-700">PT</label>
           <input
-            type="text"
-            name="ppt"
-            value={formData.ppt}
+            type="number"
+            name="pt"
+            value={formData.pt}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
@@ -356,13 +358,24 @@ export default function VerificationPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Sum Assured</label>
-          <input
-            type="text"
-            name="sumAssured"
-            value={formData.sumAssured}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
+          <div className="relative">
+            <select
+              name="sumAssured"
+              value={formData.sumAssured}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select Sum Assured</option>
+              <option value="5000000">₹50 Lakhs</option>
+              <option value="10000000">₹1 Crore</option>
+              <option value="20000000">₹2 Crores</option>
+              <option value="30000000">₹3 Crores</option>
+              <option value="40000000">₹4 Crores</option>
+              <option value="50000000">₹5 Crores</option>
+            </select>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">Select from predefined amounts</p>
         </div>
 
         <div>
@@ -436,7 +449,7 @@ export default function VerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
           <input
-            type="tel"
+            type="number"
             name="mobileNo"
             value={formData.mobileNo}
             onChange={handleInputChange}
@@ -447,7 +460,7 @@ export default function VerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Alternate Number</label>
           <input
-            type="tel"
+            type="number"
             name="alternateNo"
             value={formData.alternateNo}
             onChange={handleInputChange}
@@ -537,7 +550,7 @@ export default function VerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Annual Income</label>
           <input
-            type="text"
+            type="number"
             name="annualIncome"
             value={formData.annualIncome}
             onChange={handleInputChange}
@@ -548,7 +561,7 @@ export default function VerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Years of Working</label>
           <input
-            type="text"
+            type="number"
             name="yearsOfWorking"
             value={formData.yearsOfWorking}
             onChange={handleInputChange}
@@ -752,16 +765,7 @@ export default function VerificationPage() {
       className="space-y-4"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">LA Proposal</label>
-          <input
-            type="text"
-            name="laProposal"
-            value={formData.laProposal}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
+       
 
         <div>
           <label className="block text-sm font-medium text-gray-700">LA Name</label>
@@ -854,7 +858,7 @@ export default function VerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Premium Amount</label>
           <input
-            type="text"
+            type="number"
             name="premiumAmount"
             value={formData.premiumAmount}
             onChange={handleInputChange}
@@ -902,7 +906,7 @@ export default function VerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Aadhaar Number</label>
           <input
-            type="text"
+            type="number"
             name="aadharNumber"
             value={formData.aadharNumber}
             onChange={handleInputChange}

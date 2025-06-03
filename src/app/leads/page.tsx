@@ -13,6 +13,11 @@ export default function LeadsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [dateRange, setDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importStatus, setImportStatus] = useState<{
@@ -157,6 +162,23 @@ export default function LeadsPage() {
     if (selectedStatus && lead.status !== selectedStatus) {
       return false;
     }
+    // Filter by month if selected
+    if (selectedMonth) {
+      const leadDate = new Date(lead.createdAt || '');
+      const [year, month] = selectedMonth.split('-');
+      if (leadDate.getFullYear() !== parseInt(year) || leadDate.getMonth() !== parseInt(month) - 1) {
+        return false;
+      }
+    }
+    // Filter by date range if selected
+    if (dateRange.startDate && dateRange.endDate) {
+      const leadDate = new Date(lead.createdAt || '');
+      const startDate = new Date(dateRange.startDate);
+      const endDate = new Date(dateRange.endDate);
+      if (leadDate < startDate || leadDate > endDate) {
+        return false;
+      }
+    }
     // Filter by search query
     const query = searchQuery.toLowerCase();
     return (
@@ -185,9 +207,58 @@ export default function LeadsPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <div className="flex flex-col">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
             <span className="text-sm text-gray-600">Total: {filteredLeads.length}</span>
           </div>
+          
+          {/* Date Filters */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative w-full sm:w-48">
+              <select
+                value={selectedMonth}
+                onChange={(e) => {
+                  setSelectedMonth(e.target.value);
+                  setDateRange({ startDate: '', endDate: '' }); // Clear date range when month is selected
+                }}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Month</option>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const date = new Date();
+                  date.setMonth(date.getMonth() - i);
+                  return (
+                    <option key={i} value={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`}>
+                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={(e) => {
+                  setDateRange(prev => ({ ...prev, startDate: e.target.value }));
+                  setSelectedMonth(''); // Clear month selection when date range is selected
+                }}
+                className="w-full sm:w-40 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Start Date"
+              />
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={(e) => {
+                  setDateRange(prev => ({ ...prev, endDate: e.target.value }));
+                  setSelectedMonth(''); // Clear month selection when date range is selected
+                }}
+                className="w-full sm:w-40 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="End Date"
+              />
+            </div>
+          </div>
+
           <div className="relative w-full sm:w-64">
             <input
               type="text"
@@ -229,7 +300,7 @@ export default function LeadsPage() {
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Statuses</option>
+              <option value="">All Status</option>
               <option value="Fresh">Fresh</option>
               <option value="Interested">Interested</option>
               <option value="Callback Later">Callback Later</option>

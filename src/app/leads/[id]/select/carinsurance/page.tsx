@@ -358,7 +358,7 @@ export default function CarInsurancePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
               <input
-                type="text"
+                type="number"
                 name="pincode"
                 value={formData.pincode}
                 onChange={handleInputChange}

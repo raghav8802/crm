@@ -148,17 +148,29 @@ export default function AddLead() {
                 type="tel"
                 pattern="[0-9]{10}"
                 maxLength={10}
+                minLength={10}
                 placeholder="Enter 10-digit Phone Number"
                 required
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData({ ...formData, phoneNumber: value });
+                }}
+                onKeyPress={(e) => {
+                  if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
+              {formData.phoneNumber.length > 0 && formData.phoneNumber.length !== 10 && (
+                <p className="mt-1 text-sm text-red-600">Please enter exactly 10 digits</p>
+              )}
             </div>
 
             {/* Optional Fields */}
             <div>
-              <label htmlFor="altNumber" className="block text-sm font-medium text-gray-700">Alternative Number <span className="text-red-500">*</span></label>
+              <label htmlFor="altNumber" className="block text-sm font-medium text-gray-700">Alternative Number </label>
               <input
                 id="altNumber"
                 type="tel"
@@ -167,8 +179,7 @@ export default function AddLead() {
                 placeholder="Enter Alternative Number"
                 value={formData.altNumber}
                 onChange={(e) => setFormData({ ...formData, altNumber: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"               
               />
             </div>
 
@@ -220,7 +231,7 @@ export default function AddLead() {
                 value={formData.tabacoUser}
                 onChange={(e) => setFormData({ ...formData, tabacoUser: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+                
               >
                 <option value="no">No</option>
                 <option value="yes">Yes</option>
@@ -236,7 +247,7 @@ export default function AddLead() {
                 value={formData.annualIncome}
                 onChange={(e) => setFormData({ ...formData, annualIncome: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+                
               />
             </div>
 
@@ -249,7 +260,7 @@ export default function AddLead() {
                 value={formData.occupation}
                 onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+                
               />
             </div>
 
@@ -260,7 +271,7 @@ export default function AddLead() {
                 value={formData.education}
                 onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+                
               >
                 <option value="10th">10th</option>
                 <option value="12th">12th</option>
@@ -279,7 +290,7 @@ export default function AddLead() {
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 rows={3}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+               
               />
             </div>
 
