@@ -339,23 +339,23 @@ export default function Home() {
         </div>
 
         {isAdmin ? (
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-500">Team Members</p>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{users.length}</h3>
-              </div>
-              <div className="bg-yellow-100 p-2 sm:p-3 rounded-full">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-500">Team Members</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{users.length}</h3>
             </div>
-            <div className="mt-2 sm:mt-4">
-              <span className="text-green-500 text-xs sm:text-sm font-semibold">Active</span>
-              <span className="text-gray-500 text-xs sm:text-sm ml-2">team members</span>
+            <div className="bg-yellow-100 p-2 sm:p-3 rounded-full">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
             </div>
           </div>
+          <div className="mt-2 sm:mt-4">
+            <span className="text-green-500 text-xs sm:text-sm font-semibold">Active</span>
+            <span className="text-gray-500 text-xs sm:text-sm ml-2">team members</span>
+          </div>
+        </div>
         ) : (
           <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <div className="flex items-center justify-between">

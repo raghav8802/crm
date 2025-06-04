@@ -105,6 +105,7 @@ export default function LifeInsuranceVerificationPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
+  const [newRemark, setNewRemark] = useState('');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -154,14 +155,24 @@ export default function LifeInsuranceVerificationPage() {
     if (!editData) return;
     setIsSaving(true);
     try {
+      let payload: any = { ...editData };
+      if (newRemark.trim()) {
+        payload.newRemark = {
+          text: newRemark.trim(),
+          user: currentUser?.role || 'unknown',
+          timestamp: new Date().toISOString()
+        };
+      }
       const res = await fetch(`/api/leads/${params.id}/life-insurance`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Failed to update verification');
       const data = await res.json();
-      setVerification(editData);
+      setVerification(data.data);
+      setEditData(data.data);
+      setNewRemark('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update');
     } finally {
@@ -193,12 +204,27 @@ export default function LifeInsuranceVerificationPage() {
     }
   };
 
-  const renderField = (label: string, value: any, type: 'text' | 'date' | 'boolean' = 'text') => {
-    let displayValue = value;
+  const renderField = (
+    label: string,
+    fieldName: keyof LifeInsuranceVerification,
+    value: any,
+    type: 'text' | 'date' | 'boolean' = 'text'
+  ) => {
+    let displayValue = '-';
+    let inputValue = value || '';
+
     if (value !== undefined && value !== null) {
       switch (type) {
         case 'date':
-          displayValue = new Date(value).toLocaleString();
+          try {
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+              displayValue = date.toLocaleDateString();
+              inputValue = date.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.error('Error parsing date:', e);
+          }
           break;
         case 'boolean':
           displayValue = value ? 'Yes' : 'No';
@@ -213,9 +239,9 @@ export default function LifeInsuranceVerificationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-500">{label}</label>
           <input
-            type={type === 'date' ? 'datetime-local' : 'text'}
-            value={value || ''}
-            onChange={(e) => handleFieldChange(label.toLowerCase().replace(/\s+/g, '') as keyof LifeInsuranceVerification, e.target.value)}
+            type={type === 'date' ? 'date' : 'text'}
+            value={inputValue}
+            onChange={(e) => handleFieldChange(fieldName, e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>
@@ -292,15 +318,6 @@ export default function LifeInsuranceVerificationPage() {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          {canEdit && (
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-          )}
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(verification.status)}`}>
             {formatStatus(verification.status)}
           </span>
@@ -320,12 +337,12 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Selected Company', verification.selectedCompany)}
-                {renderField('Residential Status', verification.residentialStatus)}
-                {renderField('Nationality', verification.nationality)}
-                {renderField('Policy For', verification.policyFor)}
-                {renderField('Created At', verification.createdAt, 'date')}
-                {renderField('Last Updated', verification.updatedAt, 'date')}
+                {renderField('Selected Company', 'selectedCompany', editData?.selectedCompany)}
+                {renderField('Residential Status', 'residentialStatus', editData?.residentialStatus)}
+                {renderField('Nationality', 'nationality', editData?.nationality)}
+                {renderField('Policy For', 'policyFor', editData?.policyFor)}
+                {renderField('Created At', 'createdAt', editData?.createdAt, 'date')}
+                {renderField('Last Updated', 'updatedAt', editData?.updatedAt, 'date')}
               </div>
             </div>
 
@@ -333,17 +350,17 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Product Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Product Name', verification.productName)}
-                {renderField('PT', verification.pt)}
-                {renderField('PPT', verification.ppt)}
-                {renderField('Plan Variant', verification.planVariant)}
-                {renderField('Premium', verification.premium)}
-                {renderField('Smoker', verification.isSmoker)}
-                {renderField('Mode of Payment', verification.modeOfPayment)}
-                {renderField('Premium Payment Method', verification.premiumPaymentMethod)}
-                {renderField('Income Payout Option', verification.incomePayoutOption)}
-                {renderField('Income Payout Mode', verification.incomePayoutMode)}
-                {renderField('Rider', verification.rider)}
+                {renderField('Product Name', 'productName', editData?.productName)}
+                {renderField('PT', 'pt', editData?.pt)}
+                {renderField('PPT', 'ppt', editData?.ppt)}
+                {renderField('Plan Variant', 'planVariant', editData?.planVariant)}
+                {renderField('Premium', 'premium', editData?.premium)}
+                {renderField('Smoker', 'isSmoker', editData?.isSmoker)}
+                {renderField('Mode of Payment', 'modeOfPayment', editData?.modeOfPayment)}
+                {renderField('Premium Payment Method', 'premiumPaymentMethod', editData?.premiumPaymentMethod)}
+                {renderField('Income Payout Option', 'incomePayoutOption', editData?.incomePayoutOption)}
+                {renderField('Income Payout Mode', 'incomePayoutMode', editData?.incomePayoutMode)}
+                {renderField('Rider', 'rider', editData?.rider)}
               </div>
             </div>
 
@@ -351,24 +368,24 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Name', verification.name)}
-                {renderField('Mobile Number', verification.mobileNo)}
-                {renderField('Alternate Number', verification.alternateNo)}
-                {renderField('Email', verification.email)}
-                {renderField('Date of Birth', verification.dateOfBirth, 'date')}
-                {renderField('Education', verification.education)}
-                {renderField('Occupation', verification.occupation)}
-                {renderField('Organization Name', verification.organizationName)}
-                {renderField('Work Belongs To', verification.workBelongsTo)}
-                {renderField('Annual Income', verification.annualIncome)}
-                {renderField('Years of Working', verification.yearsOfWorking)}
-                {renderField('Marital Status', verification.maritalStatus)}
-                {renderField('Place of Birth', verification.placeOfBirth)}
+                {renderField('Name', 'name', editData?.name)}
+                {renderField('Mobile Number', 'mobileNo', editData?.mobileNo)}
+                {renderField('Alternate Number', 'alternateNo', editData?.alternateNo)}
+                {renderField('Email', 'email', editData?.email)}
+                {renderField('Date of Birth', 'dateOfBirth', editData?.dateOfBirth, 'date')}
+                {renderField('Education', 'education', editData?.education)}
+                {renderField('Occupation', 'occupation', editData?.occupation)}
+                {renderField('Organization Name', 'organizationName', editData?.organizationName)}
+                {renderField('Work Belongs To', 'workBelongsTo', editData?.workBelongsTo)}
+                {renderField('Annual Income', 'annualIncome', editData?.annualIncome)}
+                {renderField('Years of Working', 'yearsOfWorking', editData?.yearsOfWorking)}
+                {renderField('Marital Status', 'maritalStatus', editData?.maritalStatus)}
+                {renderField('Place of Birth', 'placeOfBirth', editData?.placeOfBirth)}
                 <div className="md:col-span-3">
-                  {renderField('Current Address', verification.currentAddress)}
+                  {renderField('Current Address', 'currentAddress', editData?.currentAddress)}
                 </div>
                 <div className="md:col-span-3">
-                  {renderField('Permanent Address', verification.permanentAddress)}
+                  {renderField('Permanent Address', 'permanentAddress', editData?.permanentAddress)}
                 </div>
               </div>
             </div>
@@ -377,17 +394,17 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Family Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Father\'s Name', verification.fatherName)}
-                {renderField('Father\'s Age', verification.fatherAge)}
-                {renderField('Father\'s Status', verification.fatherStatus)}
-                {renderField('Mother\'s Name', verification.motherName)}
-                {renderField('Mother\'s Age', verification.motherAge)}
-                {renderField('Mother\'s Status', verification.motherStatus)}
-                {renderField('Spouse\'s Name', verification.spouseName)}
-                {renderField('Spouse\'s Age', verification.spouseAge)}
-                {renderField('Nominee Name', verification.nomineeName)}
-                {renderField('Nominee Relation', verification.nomineeRelation)}
-                {renderField('Nominee Date of Birth', verification.nomineeDOB, 'date')}
+                {renderField('Father\'s Name', 'fatherName', editData?.fatherName)}
+                {renderField('Father\'s Age', 'fatherAge', editData?.fatherAge)}
+                {renderField('Father\'s Status', 'fatherStatus', editData?.fatherStatus)}
+                {renderField('Mother\'s Name', 'motherName', editData?.motherName)}
+                {renderField('Mother\'s Age', 'motherAge', editData?.motherAge)}
+                {renderField('Mother\'s Status', 'motherStatus', editData?.motherStatus)}
+                {renderField('Spouse\'s Name', 'spouseName', editData?.spouseName)}
+                {renderField('Spouse\'s Age', 'spouseAge', editData?.spouseAge)}
+                {renderField('Nominee Name', 'nomineeName', editData?.nomineeName)}
+                {renderField('Nominee Relation', 'nomineeRelation', editData?.nomineeRelation)}
+                {renderField('Nominee Date of Birth', 'nomineeDOB', editData?.nomineeDOB, 'date')}
               </div>
             </div>
 
@@ -395,18 +412,18 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Insurance Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Relationship With Proposer', verification.relationshipWithProposer)}
-                {renderField('LA Name', verification.laName)}
-                {renderField('LA Date of Birth', verification.laDob, 'date')}
-                {renderField('Age', verification.age)}
-                {renderField('Height (ft)', verification.heightFt)}
-                {renderField('Height (inches)', verification.heightIn)}
-                {renderField('Weight', verification.weight)}
-                {renderField('Designation', verification.designation)}
-                {renderField('Existing Policy', verification.existingPolicy)}
-                {renderField('Premium Amount', verification.premiumAmount)}
+                {renderField('Relationship With Proposer', 'relationshipWithProposer', editData?.relationshipWithProposer)}
+                {renderField('LA Name', 'laName', editData?.laName)}
+                {renderField('LA Date of Birth', 'laDob', editData?.laDob, 'date')}
+                {renderField('Age', 'age', editData?.age)}
+                {renderField('Height (ft)', 'heightFt', editData?.heightFt)}
+                {renderField('Height (inches)', 'heightIn', editData?.heightIn)}
+                {renderField('Weight', 'weight', editData?.weight)}
+                {renderField('Designation', 'designation', editData?.designation)}
+                {renderField('Existing Policy', 'existingPolicy', editData?.existingPolicy)}
+                {renderField('Premium Amount', 'premiumAmount', editData?.premiumAmount)}
                 <div className="md:col-span-3">
-                  {renderField('Remarks', verification.remarks)}
+                  {renderField('Remarks', 'remarks', editData?.remarks)}
                 </div>
               </div>
             </div>
@@ -415,14 +432,14 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Proposer Documents</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderField('PAN Number', verification.proposerPanNumber)}
-                {renderDocumentLink(verification.proposerPanPhoto, 'PAN Card')}
-                {renderField('Aadhaar Number', verification.proposerAadharNumber)}
-                {renderDocumentLink(verification.proposerAadharPhoto, 'Aadhaar Card')}
-                {renderDocumentLink(verification.proposerPhoto, 'Photo')}
-                {renderDocumentLink(verification.proposerCancelledCheque, 'Cancelled Cheque')}
-                {renderDocumentLink(verification.proposerBankStatement, 'Bank Statement')}
-                {renderDocumentLink(verification.proposerOtherDocument, 'Other Document')}
+                {renderField('PAN Number', 'proposerPanNumber', editData?.proposerPanNumber)}
+                {renderDocumentLink(editData?.proposerPanPhoto, 'PAN Card')}
+                {renderField('Aadhaar Number', 'proposerAadharNumber', editData?.proposerAadharNumber)}
+                {renderDocumentLink(editData?.proposerAadharPhoto, 'Aadhaar Card')}
+                {renderDocumentLink(editData?.proposerPhoto, 'Photo')}
+                {renderDocumentLink(editData?.proposerCancelledCheque, 'Cancelled Cheque')}
+                {renderDocumentLink(editData?.proposerBankStatement, 'Bank Statement')}
+                {renderDocumentLink(editData?.proposerOtherDocument, 'Other Document')}
               </div>
             </div>
 
@@ -430,20 +447,101 @@ export default function LifeInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Life Assured (LA) Documents</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderField('PAN Number', verification.laPanNumber)}
-                {renderDocumentLink(verification.laPanPhoto, 'PAN Card')}
-                {renderField('Aadhaar Number', verification.laAadharNumber)}
-                {renderDocumentLink(verification.laAadharPhoto, 'Aadhaar Card')}
-                {renderDocumentLink(verification.laPhoto, 'Photo')}
-                {renderDocumentLink(verification.laCancelledCheque, 'Cancelled Cheque')}
-                {renderDocumentLink(verification.laBankStatement, 'Bank Statement')}
-                {renderDocumentLink(verification.laOtherDocument, 'Other Document')}
+                {renderField('PAN Number', 'laPanNumber', editData?.laPanNumber)}
+                {renderDocumentLink(editData?.laPanPhoto, 'PAN Card')}
+                {renderField('Aadhaar Number', 'laAadharNumber', editData?.laAadharNumber)}
+                {renderDocumentLink(editData?.laAadharPhoto, 'Aadhaar Card')}
+                {renderDocumentLink(editData?.laPhoto, 'Photo')}
+                {renderDocumentLink(editData?.laCancelledCheque, 'Cancelled Cheque')}
+                {renderDocumentLink(editData?.laBankStatement, 'Bank Statement')}
+                {renderDocumentLink(editData?.laOtherDocument, 'Other Document')}
+              </div>
+            </div>
+
+            {/* Status Dropdown Section (like term page) */}
+            <div className="mt-8">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Status & Remark</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Status</label>
+                  {canEdit ? (
+                    <select
+                      value={editData?.status || ''}
+                      onChange={e => handleFieldChange('status', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="submitted">Submitted</option>
+                      <option value="processing">Processing</option>
+                      <option value="link_created">Link Created</option>
+                      <option value="payment_done">Payment Done</option>
+                      <option value="PLVC_verification">PLVC Verification</option>
+                      <option value="PLVC_done">PLVC Done</option>
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{verification.status}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Remarks</label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto mb-2 bg-gray-50 rounded p-2 border border-gray-200">
+                    {Array.isArray(verification.remarks) && verification.remarks.length > 0 ? (
+                      verification.remarks.map((remark: any, idx: number) => (
+                        <div key={idx} className="bg-white rounded p-2 text-xs text-gray-700 border border-gray-100">
+                          <div className="font-semibold">{remark.user}</div>
+                          <div>{remark.text}</div>
+                          <div className="text-gray-400 text-[10px]">{remark.timestamp ? new Date(remark.timestamp).toLocaleString() : ''}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-400">No remarks yet.</div>
+                    )}
+                  </div>
+                  {canEdit && (
+                    <>
+                      <hr className="my-2" />
+                      <textarea
+                        value={newRemark}
+                        onChange={e => setNewRemark(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        rows={2}
+                        placeholder="Add a new remark..."
+                      />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
           </div>
         </div>
       </div>
+
+      {canEdit && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Save Changes
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 } 

@@ -157,7 +157,7 @@ export default function TermInsuranceVerificationPage() {
         payload.newRemark = {
           text: newRemark.trim(),
           user: currentUser?.role || 'unknown',
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         };
       }
       const res = await fetch(`/api/leads/${params.id}/term-insurance`, {

@@ -123,82 +123,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     await connectDB();
     const leadId = params.id;
-    const formData = await req.formData();
+    const updateData = await req.json();
+    let updateQuery: any = { $set: {} };
 
-    const updateData: Record<string, any> = {};
-
-    // Handle file uploads for proposer
-    const proposerFileFields = [
-      'proposerPanImage',
-      'proposerAadharPhoto',
-      'proposerPhoto',
-      'proposerCancelledCheque',
-      'proposerBankStatement',
-      'proposerOtherDocument'
-    ];
-
-    // Process proposer file uploads
-    for (const field of proposerFileFields) {
-      const file = formData.get(field) as File;
-      if (file) {
-        const filePath = await uploadFile(file, leadId, 'health-insurance');
-        updateData[field] = filePath;
-      }
+    if (updateData.newRemark) {
+      updateQuery.$push = { remarks: updateData.newRemark };
+      delete updateData.newRemark;
     }
+    updateQuery.$set = { ...updateData };
 
-    // Process insured persons data
-    const insuredPersonsData = formData.get('insuredPersons');
-    if (insuredPersonsData) {
-      try {
-        const insuredPersons = JSON.parse(insuredPersonsData as string);
-        const processedInsuredPersons = await Promise.all(
-          insuredPersons.map(async (person: any) => {
-            const processedPerson = { ...person };
-            
-            // Handle aadhar photo upload
-            const aadharPhotoFile = formData.get(`insuredPerson_${person.id}_aadharPhoto`) as File;
-            if (aadharPhotoFile) {
-              processedPerson.aadharPhoto = await uploadFile(aadharPhotoFile, leadId, 'health-insurance');
-            }
-
-            // Handle medical documents uploads
-            const medicalDocs = [];
-            let i = 0;
-            while (true) {
-              const file = formData.get(`insuredPerson_${person.id}_medicalDoc_${i}`) as File;
-              if (!file) break;
-              const filePath = await uploadFile(file, leadId, 'health-insurance');
-              medicalDocs.push(filePath);
-              i++;
-            }
-            if (medicalDocs.length > 0) {
-              processedPerson.medicalDocuments = medicalDocs;
-            }
-
-            return processedPerson;
-          })
-        );
-        updateData.insuredPersons = processedInsuredPersons;
-      } catch (error) {
-        console.error('Error processing insured persons data:', error);
-        // Continue without insured persons data if there's an error
-      }
-    }
-
-    // Process other form fields
-    for (const [key, value] of formData.entries()) {
-      if (!proposerFileFields.includes(key) && key !== 'insuredPersons') {
-        // Only add non-empty values
-        if (value !== null && value !== undefined && value !== '') {
-          updateData[key] = value;
-        }
-      }
-    }
-
-    // Update the verification record
     const verification = await HealthInsuranceVerification.findOneAndUpdate(
       { leadId },
-      updateData,
+      updateQuery,
       { new: true }
     );
 

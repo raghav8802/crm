@@ -67,7 +67,7 @@ export interface ITermInsuranceVerification extends Document {
   remarks: Array<{
     text: string;
     user: string;
-    timestamp: number;
+    timestamp: Date;
   }>;
   plvcVideo: string;
 
@@ -195,7 +195,7 @@ const TermInsuranceVerificationSchema = new Schema({
   remarks: [{
     text: String,
     user: String,
-    timestamp: { type: Number, default: () => Date.now() }
+    timestamp: { type: Date, default: Date.now }
   }],
   plvcVideo: String,
 

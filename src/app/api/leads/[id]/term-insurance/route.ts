@@ -107,7 +107,12 @@ export async function PUT(
 
     let updateOps: any = {};
     if (updateData.newRemark) {
-      updateOps.$push = { remarks: updateData.newRemark };
+      // Convert timestamp string to Date object
+      const remark = {
+        ...updateData.newRemark,
+        timestamp: new Date(updateData.newRemark.timestamp)
+      };
+      updateOps.$push = { remarks: remark };
     }
     const fieldsToUpdate = { ...updateData };
     delete fieldsToUpdate.newRemark;

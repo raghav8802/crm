@@ -87,42 +87,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     await connectDB();
     const leadId = params.id;
-    const formData = await req.formData();
+    const updateData = await req.json();
 
-    // Handle file uploads
-    const fileFields = [
-      'proposerPanPhoto',
-      'proposerAadharPhoto',
-      'proposerPhoto',
-      'proposerCancelledCheque',
-      'proposerBankStatement',
-      'proposerOtherDocument',
-      'laPanPhoto',
-      'laAadharPhoto',
-      'laPhoto',
-      'laCancelledCheque',
-      'laBankStatement',
-      'laOtherDocument'
-    ];
-
-    const updateData: Record<string, any> = {};
-
-    // Process file uploads
-    for (const field of fileFields) {
-      const file = formData.get(field) as File;
-      if (file) {
-        const filePath = await uploadFile(file, leadId, 'life-insurance');
-        updateData[field] = filePath;
-      }
-    }
-
-    // Process other form fields
-    for (const [key, value] of formData.entries()) {
-      if (!fileFields.includes(key)) {
-        updateData[key] = value;
-      }
-    }
-
+    // No file upload handling for JSON body
+    // Directly update the document with the received JSON
     const verification = await LifeInsuranceVerification.findOneAndUpdate(
       { leadId },
       { $set: updateData },
