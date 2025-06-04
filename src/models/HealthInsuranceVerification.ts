@@ -73,7 +73,7 @@ export interface IHealthInsuranceVerification extends Document {
 }
 
 const HealthInsuranceVerificationSchema = new Schema({
-  leadId: { type: Schema.Types.ObjectId, ref: 'Lead', required: true },
+  leadId: { type: Schema.Types.ObjectId, ref: 'Lead' },
   status: {
     type: String,
     enum: ['submitted', 'processing', 'link_created', 'payment_done', 'PLVC_verification', 'PLVC_done'],
@@ -82,40 +82,40 @@ const HealthInsuranceVerificationSchema = new Schema({
   insuranceType: { type: String, default: 'health_insurance' },
 
   // Company Selection
-  selectedCompany: { type: String, required: true },
+  selectedCompany: { type: String },
 
   // Policy Details
   manufacturerName: { type: String },
-  planName: { type: String, required: true },
-  premium: { type: String, required: true },
-  ptPpt: { type: String, required: true },
-  mode: { type: String, required: true },
-  portFresh: { type: String, required: true },
-  sumInsured: { type: String, required: true },
-  sumInsuredType: { type: String, required: true },
+  planName: { type: String },
+  premium: { type: String },
+  ptPpt: { type: String },
+  mode: { type: String },
+  portFresh: { type: String },
+  sumInsured: { type: String },
+  sumInsuredType: { type: String },
   rider: { type: String },
 
   // Proposer Details
-  proposerName: { type: String, required: true },
-  proposerMobile: { type: String, required: true },
-  proposerEmail: { type: String, required: true },
-  proposerAddress: { type: String, required: true },
-  proposerAnnualIncome: { type: String, required: true },
-  proposerPanNumber: { type: String, required: true },
-  proposerPanImage: { type: String, required: true },
-  proposerHeight: { type: String, required: true },
-  proposerWeight: { type: String, required: true },
+  proposerName: { type: String },
+  proposerMobile: { type: String },
+  proposerEmail: { type: String },
+  proposerAddress: { type: String },
+  proposerAnnualIncome: { type: String },
+  proposerPanNumber: { type: String },
+  proposerPanImage: { type: String },
+  proposerHeight: { type: String },
+  proposerWeight: { type: String },
 
   // Insured Persons
   insuredPersons: [{
-    name: { type: String, required: true },
-    dob: { type: String, required: true },
-    gender: { type: String, required: true },
-    relationship: { type: String, required: true },
-    height: { type: String, required: true },
-    weight: { type: String, required: true },
-    aadharNumber: { type: String, required: true },
-    aadharPhoto: { type: String, required: true },
+    name: { type: String },
+    dob: { type: String },
+    gender: { type: String },
+    relationship: { type: String },
+    height: { type: String },
+    weight: { type: String },
+    aadharNumber: { type: String },
+    aadharPhoto: { type: String },
     medicalHistory: { type: String },
     preExistingDisease: { type: String },
     bpDiabetes: { type: String },
@@ -130,19 +130,19 @@ const HealthInsuranceVerificationSchema = new Schema({
   }],
 
   // Nominee Details
-  nomineeName: { type: String, required: true },
-  nomineeRelation: { type: String, required: true },
-  nomineeDOB: { type: String, required: true },
+  nomineeName: { type: String },
+  nomineeRelation: { type: String },
+  nomineeDOB: { type: String },
 
   // Remarks
   remarks: [{
-    text: { type: String, required: true },
-    user: { type: String, required: true },
+    text: { type: String },
+    user: { type: String },
     timestamp: { type: Date, default: Date.now }
   }],
 
   // PLVC Verification Video
-  plvcVideo: { type: String },
+  plvcVideo: { type: String }
 }, {
   timestamps: true
 });

@@ -432,7 +432,6 @@ export default function VerificationPage() {
             value={formData.planName}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -444,7 +443,6 @@ export default function VerificationPage() {
             value={formData.premium}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -456,7 +454,6 @@ export default function VerificationPage() {
             value={formData.ptPpt}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -467,7 +464,6 @@ export default function VerificationPage() {
             value={formData.mode}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           >
             <option value="">Select Mode</option>
             <option value="Monthly">Monthly</option>
@@ -484,7 +480,6 @@ export default function VerificationPage() {
             value={formData.portFresh}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           >
             <option value="">Select Option</option>
             <option value="Port">Port</option>
@@ -500,7 +495,6 @@ export default function VerificationPage() {
             value={formData.sumInsured}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -511,7 +505,6 @@ export default function VerificationPage() {
             value={formData.sumInsuredType}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           >
             <option value="">Select Type</option>
             <option value="Individual">Individual</option>
@@ -550,7 +543,6 @@ export default function VerificationPage() {
             value={formData.proposerName}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -562,7 +554,6 @@ export default function VerificationPage() {
             value={formData.proposerMobile}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -574,7 +565,6 @@ export default function VerificationPage() {
             value={formData.proposerEmail}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -586,7 +576,6 @@ export default function VerificationPage() {
             value={formData.proposerAnnualIncome}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -598,7 +587,6 @@ export default function VerificationPage() {
             value={formData.proposerHeight}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -610,7 +598,6 @@ export default function VerificationPage() {
             value={formData.proposerWeight}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -622,7 +609,6 @@ export default function VerificationPage() {
             value={formData.proposerPanNumber}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -638,7 +624,6 @@ export default function VerificationPage() {
               file:text-sm file:font-semibold
               file:bg-blue-50 file:text-blue-700
               hover:file:bg-blue-100"
-            required
           />
         </div>
 
@@ -650,7 +635,6 @@ export default function VerificationPage() {
             onChange={(e) => handleInputChange(e as any)}
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
       </div>
@@ -691,7 +675,6 @@ export default function VerificationPage() {
                 value={person.name}
                 onChange={(e) => handleInsuredPersonChange(index, 'name', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
           />
         </div>
 
@@ -702,7 +685,6 @@ export default function VerificationPage() {
                 value={person.dob}
                 onChange={(e) => handleInsuredPersonChange(index, 'dob', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
           />
         </div>
 
@@ -712,8 +694,7 @@ export default function VerificationPage() {
                 value={person.gender}
                 onChange={(e) => handleInsuredPersonChange(index, 'gender', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              >
+          >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -727,8 +708,7 @@ export default function VerificationPage() {
                 value={person.relationship}
                 onChange={(e) => handleInsuredPersonChange(index, 'relationship', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              >
+          >
                 <option value="">Select Relationship</option>
                 <option value="Self">Self</option>
                 <option value="Spouse">Spouse</option>
@@ -745,7 +725,6 @@ export default function VerificationPage() {
                 value={person.height}
                 onChange={(e) => handleInsuredPersonChange(index, 'height', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
           />
         </div>
 
@@ -756,7 +735,6 @@ export default function VerificationPage() {
                 value={person.weight}
                 onChange={(e) => handleInsuredPersonChange(index, 'weight', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
           />
         </div>
 
@@ -767,7 +745,6 @@ export default function VerificationPage() {
                 value={person.aadharNumber}
                 onChange={(e) => handleInsuredPersonChange(index, 'aadharNumber', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
           />
         </div>
 
@@ -992,7 +969,6 @@ export default function VerificationPage() {
             value={formData.nomineeName}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -1003,7 +979,6 @@ export default function VerificationPage() {
             value={formData.nomineeRelation}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           >
             <option value="">Select Relation</option>
             <option value="Spouse">Spouse</option>
@@ -1022,7 +997,6 @@ export default function VerificationPage() {
             value={formData.nomineeDOB}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
           />
         </div>
       </div>
