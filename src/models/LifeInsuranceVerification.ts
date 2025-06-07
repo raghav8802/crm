@@ -90,6 +90,9 @@ export interface ILifeInsuranceVerification extends Document {
   laBankStatement: string; // URL or path to stored file
   laOtherDocument: string; // URL or path to stored file
 
+  // PLVC Video
+  plvcVideo?: string;
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -231,7 +234,10 @@ const LifeInsuranceVerificationSchema = new Schema({
   laPhoto: String,
   laCancelledCheque: String,
   laBankStatement: String,
-  laOtherDocument: String
+  laOtherDocument: String,
+
+  // PLVC Video
+  plvcVideo: String
 }, {
   timestamps: true
 });

@@ -285,35 +285,42 @@ export default function HealthInsuranceVerificationPage() {
     );
   };
 
-  // Video upload handler (with validation)
+  // Video/Audio upload handler (with validation)
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    if (file.type !== 'video/mp4' && file.type !== 'video/quicktime') {
-      setError('Please upload only MP4 or MOV video files');
+    
+    // Check file type
+    const isVideo = file.type.startsWith('video/');
+    const isAudio = file.type.startsWith('audio/');
+    
+    if (!isVideo && !isAudio) {
+      setError('Please upload only MP4, MOV video files or MP3, WAV audio files');
       return;
     }
+    
     if (file.size > 100 * 1024 * 1024) { // 100MB limit
-      setError('Video file size should be less than 100MB');
+      setError('File size should be less than 100MB');
       return;
     }
+    
     setVideoUploading(true);
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('video', file);
+      formData.append('media', file);
       const res = await fetch(`/api/leads/${params.id}/health-insurance/plvc-video`, {
         method: 'POST',
         body: formData,
       });
-      if (!res.ok) throw new Error('Failed to upload video');
+      if (!res.ok) throw new Error('Failed to upload file');
       const data = await res.json();
       if (data.success && data.data) {
         setVerification(data.data);
         setEditData(data.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload video');
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
     } finally {
       setVideoUploading(false);
       if (videoInputRef.current) videoInputRef.current.value = '';
@@ -538,24 +545,34 @@ export default function HealthInsuranceVerificationPage() {
             )}
           </div>
 
-          {/* PLVC Video Upload Section (Car UI style) */}
+          {/* PLVC Video/Audio Upload Section */}
           {(currentUser?.role === 'PLVC_verificator' && editStatus === 'PLVC_done') && (
             <div className="mt-8 border-t pt-8">
-              <h2 className="text-lg font-semibold text-blue-900 mb-4 border-b pb-2">PLVC Verification Video</h2>
+              <h2 className="text-lg font-semibold text-blue-900 mb-4 border-b pb-2">PLVC Verification Media</h2>
               {verification?.plvcVideo ? (
                 <div className="space-y-4">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <video 
-                      controls 
-                      className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
-                      src={verification.plvcVideo}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                    {verification.plvcVideo.match(/\.(mp4|mov)$/i) ? (
+                      <video 
+                        controls 
+                        className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
+                        src={verification.plvcVideo}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <audio 
+                        controls 
+                        className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
+                        src={verification.plvcVideo}
+                      >
+                        Your browser does not support the audio tag.
+                      </audio>
+                    )}
                   </div>
                   <div className="flex items-center justify-between max-w-3xl mx-auto">
                     <p className="text-sm text-gray-500">
-                      Video uploaded successfully
+                      {verification.plvcVideo.match(/\.(mp4|mov)$/i) ? 'Video' : 'Audio'} uploaded successfully
                     </p>
                     <button
                       onClick={() => window.open(verification.plvcVideo, '_blank')}
@@ -564,7 +581,7 @@ export default function HealthInsuranceVerificationPage() {
                       <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      Open Video
+                      Open {verification.plvcVideo.match(/\.(mp4|mov)$/i) ? 'Video' : 'Audio'}
                     </button>
                   </div>
                 </div>
@@ -578,7 +595,7 @@ export default function HealthInsuranceVerificationPage() {
                       <div className="mt-4">
                         <input
                           type="file"
-                          accept="video/mp4,video/quicktime"
+                          accept="video/mp4,video/quicktime,audio/mp3,audio/wav,audio/mpeg"
                           ref={videoInputRef}
                           onChange={handleVideoUpload}
                           disabled={videoUploading}
@@ -591,7 +608,7 @@ export default function HealthInsuranceVerificationPage() {
                         />
                       </div>
                       <p className="mt-2 text-sm text-gray-500">
-                        Upload MP4 or MOV video file (max 100MB)
+                        Upload MP4, MOV video files or MP3, WAV audio files (max 100MB)
                       </p>
                       {videoUploading && <div className="text-blue-600 mt-2">Uploading...</div>}
                       {error && <div className="text-red-600 mt-2">{error}</div>}

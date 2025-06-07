@@ -137,9 +137,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       updateQuery,
       { new: true }
     );
-
+    
     if (!verification) {
-      return NextResponse.json(
+        return NextResponse.json(
         { error: 'Verification not found' },
         { status: 404 }
       );
