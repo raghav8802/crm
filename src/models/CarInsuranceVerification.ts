@@ -43,6 +43,8 @@ export interface ICarInsuranceVerification extends Document {
     user: string;
     timestamp: Date;
   }>;
+
+  paymentScreenshot?: string;
 }
 
 const CarInsuranceVerificationSchema = new Schema({
@@ -94,7 +96,10 @@ const CarInsuranceVerificationSchema = new Schema({
       user: { type: String, required: true },
       timestamp: { type: Date, default: Date.now }
     }
-  ]
+  ],
+
+  paymentScreenshot: { type: String },
+
 }, {
   timestamps: true
 });

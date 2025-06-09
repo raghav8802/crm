@@ -68,6 +68,9 @@ export interface IHealthInsuranceVerification extends Document {
   // PLVC Verification Video
   plvcVideo?: string;
 
+  // Payment Screenshot
+  paymentScreenshot?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -142,7 +145,10 @@ const HealthInsuranceVerificationSchema = new Schema({
   }],
 
   // PLVC Verification Video
-  plvcVideo: { type: String }
+  plvcVideo: { type: String },
+
+  // Payment Screenshot
+  paymentScreenshot: { type: String }
 }, {
   timestamps: true
 });

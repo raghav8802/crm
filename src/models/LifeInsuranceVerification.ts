@@ -93,6 +93,9 @@ export interface ILifeInsuranceVerification extends Document {
   // PLVC Video
   plvcVideo?: string;
 
+  // Payment Screenshot
+  paymentScreenshot?: string;
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -237,7 +240,10 @@ const LifeInsuranceVerificationSchema = new Schema({
   laOtherDocument: String,
 
   // PLVC Video
-  plvcVideo: String
+  plvcVideo: String,
+
+  // Payment Screenshot
+  paymentScreenshot: String
 }, {
   timestamps: true
 });

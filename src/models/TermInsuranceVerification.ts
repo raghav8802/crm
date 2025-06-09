@@ -84,6 +84,9 @@ export interface ITermInsuranceVerification extends Document {
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
+
+  // Payment Screenshot
+  paymentScreenshot: string;
 }
 
 const TermInsuranceVerificationSchema = new Schema({
@@ -207,7 +210,14 @@ const TermInsuranceVerificationSchema = new Schema({
   userPhoto: String,
   cancelledCheque: String,
   bankStatement: String,
-  otherDocument: String
+  otherDocument: String,
+
+  // Timestamps
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+
+  // Payment Screenshot
+  paymentScreenshot: String
 }, {
   timestamps: true
 });
@@ -216,5 +226,11 @@ const TermInsuranceVerificationSchema = new Schema({
 TermInsuranceVerificationSchema.index({ leadId: 1 });
 TermInsuranceVerificationSchema.index({ status: 1 });
 TermInsuranceVerificationSchema.index({ createdAt: 1 });
+
+// Update the updatedAt timestamp before saving
+TermInsuranceVerificationSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
 
 export default mongoose.models.TermInsuranceVerification || mongoose.model<ITermInsuranceVerification>('TermInsuranceVerification', TermInsuranceVerificationSchema); 
