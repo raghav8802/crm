@@ -14,7 +14,7 @@ const leadStatuses = [
   { value: 'Call Disconnected', label: 'Call Disconnected' }, 
   { value: 'Callback Later', label: 'Callback Later' },
   { value: 'Wrong Number', label: 'Wrong Number' },
-  { value: 'Won', label: 'Won' },
+  { value: 'Won', label: 'Sale Done' },
   { value: 'Lost', label: 'Lost' },
 ];
 
@@ -374,7 +374,7 @@ export default function LeadDetailsPage() {
                 </div>
                 {lead?.status && (
                   <p className="mt-1 text-sm text-gray-500">
-                    Current Status: <span className="font-medium">{lead.status}</span>
+                    Current Status: <span className="font-medium">{lead.status === 'Won' ? 'Sale Done' : lead.status}</span>
                     {lead.callbackTime && (
                       <span className="ml-2">
                         (Callback scheduled for: {new Date(lead.callbackTime).toLocaleString()})

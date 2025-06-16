@@ -305,7 +305,7 @@ export default function LeadsPage() {
               <option value="Interested">Interested</option>
               <option value="Callback Later">Callback Later</option>
               <option value="Wrong Number">Wrong Number</option>
-              <option value="Won">Won</option>
+              <option value="Won">Sale Done</option>
               <option value="Lost">Lost</option>
             </select>
           </div>
@@ -421,7 +421,7 @@ export default function LeadsPage() {
                         lead.status === 'Wrong Number' ? 'bg-red-100 text-red-800' :
                         lead.status === 'Won' ? 'bg-purple-100 text-purple-800' :
                         'bg-gray-100 text-gray-800'}`}>
-                      {lead.status}
+                      {lead.status === 'Won' ? 'Sale Done' : lead.status}
                     </span>
                   </td>
                   <td className="px-2 sm:px-6 py-4 whitespace-nowrap">

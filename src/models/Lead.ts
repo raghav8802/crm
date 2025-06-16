@@ -43,7 +43,7 @@ const leadSchema = new mongoose.Schema({
   occupation: { type: String},
   education: { type: String, enum: ['10th', '12th', 'Graduate', 'Post Graduate', 'Other']},
   address: { type: String},
-  status: { type: String, enum: ['Fresh', 'Interested', 'Ringing', 'Follow Up', 'Call Disconnected', 'Callback Later', 'Wrong Number', 'Won', 'Lost'], required: true, default: 'Fresh' },
+  status: { type: String, enum: ['Fresh', 'Interested', 'Ringing', 'Follow Up', 'Call Disconnected', 'Callback Later', 'Wrong Number', 'Sale Done', 'Lost'], required: true, default: 'Fresh' },
   notes: [{ type: String }],
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   assignedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
