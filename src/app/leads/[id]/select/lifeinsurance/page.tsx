@@ -62,6 +62,10 @@ interface FormData {
   relationshipWithProposer: string;
   laName: string;
   laDob: string;
+  laFatherName: string;
+  laFatherDob: string;
+  laMotherName: string;
+  laMotherDob: string;
   age: string;
   heightFt: string;
   heightIn: string;
@@ -156,6 +160,10 @@ export default function LifeInsurancePage() {
     relationshipWithProposer: '',
     laName: '',
     laDob: '',
+    laFatherName: '',
+    laFatherDob: '',
+    laMotherName: '',
+    laMotherDob: '',
     age: '',
     heightFt: '',
     heightIn: '',
@@ -760,39 +768,6 @@ export default function LifeInsurancePage() {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Nominee Name</label>
-          <input
-            type="text"
-            name="nomineeName"
-            value={formData.nomineeName}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Nominee Relation</label>
-          <input
-            type="text"
-            name="nomineeRelation"
-            value={formData.nomineeRelation}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Nominee Date of Birth</label>
-          <input
-            type="date"
-            name="nomineeDOB"
-            value={formData.nomineeDOB}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
       </div>
     </motion.div>
   );
@@ -894,6 +869,50 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700">LA Father's Name</label>
+          <input
+            type="text"
+            name="laFatherName"
+            value={formData.laFatherName}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">LA Father's Date of Birth</label>
+          <input
+            type="date"
+            name="laFatherDob"
+            value={formData.laFatherDob}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">LA Mother's Name</label>
+          <input
+            type="text"
+            name="laMotherName"
+            value={formData.laMotherName}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">LA Mother's Date of Birth</label>
+          <input
+            type="date"
+            name="laMotherDob"
+            value={formData.laMotherDob}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700">Existing Policy</label>
           <input
             type="text"
@@ -924,6 +943,45 @@ export default function LifeInsurancePage() {
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
+        </div>
+
+        {/* Nominee Details Section */}
+        <div className="md:col-span-2 mt-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Nominee Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Nominee Name</label>
+              <input
+                type="text"
+                name="nomineeName"
+                value={formData.nomineeName}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Nominee Relation</label>
+              <input
+                type="text"
+                name="nomineeRelation"
+                value={formData.nomineeRelation}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Nominee Date of Birth</label>
+              <input
+                type="date"
+                name="nomineeDOB"
+                value={formData.nomineeDOB}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>

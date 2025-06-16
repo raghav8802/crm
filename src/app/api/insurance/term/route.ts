@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { TermInsurance } from '@/models/TermInsurance';
+import { TermInsurance } from '@/models/TermInsuranceVerification';
 
 export async function GET() {
   try {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { TermInsurance } from '@/models/TermInsurance';
+import  TermInsuranceVerification  from '@/models/TermInsuranceVerification';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     await connectDB();
-    const application = await TermInsurance.findById(params.id)
+    const application = await TermInsuranceVerification.findById(params.id)
       .populate('leadId', 'name phoneNumber email');
 
     if (!application) {
@@ -74,8 +74,8 @@ export async function PATCH(
       );
     }
 
-    await connectDB();
-    const application = await TermInsurance.findByIdAndUpdate(
+      await connectDB();
+      const application = await TermInsuranceVerification.findByIdAndUpdate(
       id,
       { 
         ...processedData,
@@ -135,7 +135,7 @@ export async function POST(
     }
 
     // Create term insurance document with leadId and insuranceType
-    const termInsurance = new TermInsurance({
+    const termInsurance = new TermInsuranceVerification({
       ...processedData,
       leadId: id,
       insuranceType: 'Term Insurance',

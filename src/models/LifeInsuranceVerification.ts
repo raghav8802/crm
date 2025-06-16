@@ -60,6 +60,10 @@ export interface ILifeInsuranceVerification extends Document {
   relationshipWithProposer: string;
   laName: string;
   laDob: string;
+  laFatherName: string;
+  laFatherDob: string;
+  laMotherName: string;
+  laMotherDob: string;
   age: string;
   heightFt: string;
   heightIn: string;
@@ -209,6 +213,10 @@ const LifeInsuranceVerificationSchema = new Schema({
   relationshipWithProposer: String,
   laName: String,
   laDob: String,
+  laFatherName: String,
+  laFatherDob: String,
+  laMotherName: String,
+  laMotherDob: String,
   age: String,
   heightFt: String,
   heightIn: String,

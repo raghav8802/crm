@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import HealthInsurance from '@/models/HealthInsurance';
+import HealthInsurance from '@/models/HealthInsuranceVerification';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
