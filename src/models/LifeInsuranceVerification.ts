@@ -100,6 +100,9 @@ export interface ILifeInsuranceVerification extends Document {
   // Payment Screenshot
   paymentScreenshot?: string;
 
+  // BI Document
+  biDocument: string;
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -251,7 +254,10 @@ const LifeInsuranceVerificationSchema = new Schema({
   plvcVideo: String,
 
   // Payment Screenshot
-  paymentScreenshot: String
+  paymentScreenshot: String,
+
+  // BI Document
+  biDocument: String
 }, {
   timestamps: true
 });

@@ -12,6 +12,7 @@ interface TermInsuranceVerification {
   createdAt: string;
   updatedAt: string;
   paymentScreenshot?: string;
+  biDocument?: string;
   
   // Initial Selection
   residentialStatus: 'Indian' | 'NRI';
@@ -88,8 +89,10 @@ interface TermInsuranceVerification {
   bankStatement: string;
   otherDocument: string;
 
-  // PLVC Video (optional, for PLVC_done)
-  plvcVideo?: string;
+  // Call Recordings
+  plvcVideos?: string[];
+  welcomeCallVideos?: string[];
+  salesCallVideos?: string[];
 }
 
 export default function TermInsuranceVerificationPage() {
@@ -104,6 +107,14 @@ export default function TermInsuranceVerificationPage() {
   const [newRemark, setNewRemark] = useState('');
   const [paymentScreenshotUploading, setPaymentScreenshotUploading] = useState(false);
   const paymentScreenshotRef = useRef<HTMLInputElement | null>(null);
+  const [plvcUploading, setPlvcUploading] = useState(false);
+  const [welcomeCallUploading, setWelcomeCallUploading] = useState(false);
+  const [salesCallUploading, setSalesCallUploading] = useState(false);
+  const plvcInputRef = useRef<HTMLInputElement | null>(null);
+  const welcomeCallInputRef = useRef<HTMLInputElement | null>(null);
+  const salesCallInputRef = useRef<HTMLInputElement | null>(null);
+  const [biDocumentUploading, setBiDocumentUploading] = useState(false);
+  const biDocumentRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -180,34 +191,137 @@ export default function TermInsuranceVerificationPage() {
     }
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
-    if (file.type !== 'video/mp4' && file.type !== 'video/quicktime') {
-      alert('Please upload only MP4 or MOV video files');
+  const handlePlvcUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const files = e.target.files;
+    
+    // Check file type
+    const isVideo = files[0].type.startsWith('video/');
+    const isAudio = files[0].type.startsWith('audio/');
+    
+    if (!isVideo && !isAudio) {
+      setError('Please upload only MP4, MOV video files or MP3, WAV audio files');
       return;
     }
-    if (file.size > 100 * 1024 * 1024) { // 100MB limit
-      alert('Video file size should be less than 100MB');
+    
+    if (files[0].size > 100 * 1024 * 1024) { // 100MB limit
+      setError('File size should be less than 100MB');
       return;
     }
-    setIsSaving(true);
+    
+    setPlvcUploading(true);
+    setError(null);
     try {
       const formData = new FormData();
-      formData.append('video', file);
-      const res = await fetch(`/api/leads/${params.id}/term-insurance/video`, {
+      for (let i = 0; i < files.length; i++) {
+        formData.append('media', files[i]);
+        formData.append('type', 'plvc');
+      }
+      const res = await fetch(`/api/leads/${params.id}/term-insurance/plvc-video`, {
         method: 'POST',
         body: formData,
       });
-      if (!res.ok) throw new Error('Failed to upload video');
+      if (!res.ok) throw new Error('Failed to upload files');
       const data = await res.json();
-      if (editData) {
-        setEditData({ ...editData, plvcVideo: data.videoUrl });
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload video');
+      setError(err instanceof Error ? err.message : 'Failed to upload files');
     } finally {
-      setIsSaving(false);
+      setPlvcUploading(false);
+      if (plvcInputRef.current) plvcInputRef.current.value = '';
+    }
+  };
+
+  // Welcome Call upload handler
+  const handleWelcomeCallUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const files = e.target.files;
+    
+    // Check file type
+    const isVideo = files[0].type.startsWith('video/');
+    const isAudio = files[0].type.startsWith('audio/');
+    
+    if (!isVideo && !isAudio) {
+      setError('Please upload only MP4, MOV video files or MP3, WAV audio files');
+      return;
+    }
+    
+    if (files[0].size > 100 * 1024 * 1024) { // 100MB limit
+      setError('File size should be less than 100MB');
+      return;
+    }
+    
+    setWelcomeCallUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('media', files[i]);
+        formData.append('type', 'welcome');
+      }
+      const res = await fetch(`/api/leads/${params.id}/term-insurance/plvc-video`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Failed to upload files');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload files');
+    } finally {
+      setWelcomeCallUploading(false);
+      if (welcomeCallInputRef.current) welcomeCallInputRef.current.value = '';
+    }
+  };
+
+  // Sales Call upload handler
+  const handleSalesCallUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const files = e.target.files;
+    
+    // Check file type
+    const isVideo = files[0].type.startsWith('video/');
+    const isAudio = files[0].type.startsWith('audio/');
+    
+    if (!isVideo && !isAudio) {
+      setError('Please upload only MP4, MOV video files or MP3, WAV audio files');
+      return;
+    }
+    
+    if (files[0].size > 100 * 1024 * 1024) { // 100MB limit
+      setError('File size should be less than 100MB');
+      return;
+    }
+    
+    setSalesCallUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('media', files[i]);
+        formData.append('type', 'sales');
+      }
+      const res = await fetch(`/api/leads/${params.id}/term-insurance/plvc-video`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Failed to upload files');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload files');
+    } finally {
+      setSalesCallUploading(false);
+      if (salesCallInputRef.current) salesCallInputRef.current.value = '';
     }
   };
 
@@ -253,6 +367,51 @@ export default function TermInsuranceVerificationPage() {
   const handleChangeScreenshot = () => {
     if (paymentScreenshotRef.current) {
       paymentScreenshotRef.current.click();
+    }
+  };
+
+  // BI Document upload handler
+  const handleBiDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    // Check file type
+    if (!file.type.startsWith('image/') && !file.type.startsWith('application/pdf')) {
+      setError('Please upload only image files (JPG, PNG) or PDF files');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      setError('File size should be less than 10MB');
+      return;
+    }
+    
+    setBiDocumentUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+      const res = await fetch(`/api/leads/${params.id}/term-insurance/bi-document`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Failed to upload file');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
+    } finally {
+      setBiDocumentUploading(false);
+      if (biDocumentRef.current) biDocumentRef.current.value = '';
+    }
+  };
+
+  const handleChangeBiDocument = () => {
+    if (biDocumentRef.current) {
+      biDocumentRef.current.click();
     }
   };
 
@@ -338,66 +497,154 @@ export default function TermInsuranceVerificationPage() {
     );
   };
 
-  const renderVideoUpload = () => {
+  const renderCallRecordings = () => {
     if (!verification || currentUser?.role !== 'PLVC_verificator' || verification.status !== 'PLVC_done') {
       return null;
     }
+
     return (
-      <div className="mt-6 border-t pt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">PLVC Verification Video</h3>
-        {verification.plvcVideo ? (
-          <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <video 
-                controls 
-                className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
-                src={verification.plvcVideo}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
-            <div className="flex items-center justify-between max-w-3xl mx-auto">
-              <p className="text-sm text-gray-500">
-                Video uploaded successfully
-              </p>
-              <button
-                onClick={() => window.open(verification.plvcVideo, '_blank')}
-                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Open Video
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 max-w-3xl mx-auto">
-            <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
-              <div className="text-center">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                </svg>
-                <div className="mt-4">
-                  <input
-                    type="file"
-                    accept="video/mp4,video/quicktime"
-                    onChange={handleVideoUpload}
-                    className="block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-                  />
+      <div className="mt-8 border-t pt-8">
+        <h2 className="text-lg font-semibold text-blue-900 mb-6">Call Recordings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* PLVC Recordings */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 className="text-md font-medium text-gray-700 mb-4">PLVC Recordings</h3>
+            <div className="space-y-4">
+              {editData?.plvcVideos && editData.plvcVideos.length > 0 ? (
+                <div className="space-y-3">
+                  {editData.plvcVideos.map((video, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Recording {index + 1}</span>
+                        <button
+                          onClick={() => window.open(video, '_blank')}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  Upload MP4 or MOV video file (max 100MB)
-                </p>
+              ) : (
+                <p className="text-sm text-gray-500 text-center">No PLVC recordings uploaded yet</p>
+              )}
+              <div className="mt-4">
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,audio/mp3,audio/wav,audio/mpeg"
+                  ref={plvcInputRef}
+                  onChange={handlePlvcUpload}
+                  disabled={plvcUploading}
+                  multiple
+                  className="hidden"
+                />
+                <button
+                  onClick={() => plvcInputRef.current?.click()}
+                  disabled={plvcUploading}
+                  className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {plvcUploading ? 'Uploading...' : 'Add PLVC Recording'}
+                </button>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Welcome Call Recordings */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 className="text-md font-medium text-gray-700 mb-4">Welcome Call Recordings</h3>
+            <div className="space-y-4">
+              {editData?.welcomeCallVideos && editData.welcomeCallVideos.length > 0 ? (
+                <div className="space-y-3">
+                  {editData.welcomeCallVideos.map((video, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Recording {index + 1}</span>
+                        <button
+                          onClick={() => window.open(video, '_blank')}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center">No welcome call recordings uploaded yet</p>
+              )}
+              <div className="mt-4">
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,audio/mp3,audio/wav,audio/mpeg"
+                  ref={welcomeCallInputRef}
+                  onChange={handleWelcomeCallUpload}
+                  disabled={welcomeCallUploading}
+                  multiple
+                  className="hidden"
+                />
+                <button
+                  onClick={() => welcomeCallInputRef.current?.click()}
+                  disabled={welcomeCallUploading}
+                  className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {welcomeCallUploading ? 'Uploading...' : 'Add Welcome Call Recording'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Sales Call Recordings */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 className="text-md font-medium text-gray-700 mb-4">Sales Call Recordings</h3>
+            <div className="space-y-4">
+              {editData?.salesCallVideos && editData.salesCallVideos.length > 0 ? (
+                <div className="space-y-3">
+                  {editData.salesCallVideos.map((video, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Recording {index + 1}</span>
+                        <button
+                          onClick={() => window.open(video, '_blank')}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center">No sales call recordings uploaded yet</p>
+              )}
+              <div className="mt-4">
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,audio/mp3,audio/wav,audio/mpeg"
+                  ref={salesCallInputRef}
+                  onChange={handleSalesCallUpload}
+                  disabled={salesCallUploading}
+                  multiple
+                  className="hidden"
+                />
+                <button
+                  onClick={() => salesCallInputRef.current?.click()}
+                  disabled={salesCallUploading}
+                  className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {salesCallUploading ? 'Uploading...' : 'Add Sales Call Recording'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {error && <div className="text-red-600 mt-4 text-center">{error}</div>}
       </div>
     );
   };
@@ -463,12 +710,12 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Selected Company', editData?.selectedCompany, 'text', 'selectedCompany')}
-                {renderField('Residential Status', editData?.residentialStatus, 'text', 'residentialStatus')}
-                {renderField('Nationality', editData?.nationality, 'text', 'nationality')}
-                {renderField('Policy For', editData?.policyFor, 'text', 'policyFor')}
-                {renderField('Created At', editData?.createdAt, 'date', 'createdAt')}
-                {renderField('Last Updated', editData?.updatedAt, 'date', 'updatedAt')}
+                {renderField('Selected Company', verification.selectedCompany, 'text', 'selectedCompany')}
+                {renderField('Residential Status', verification.residentialStatus, 'text', 'residentialStatus')}
+                {renderField('Nationality', verification.nationality, 'text', 'nationality')}
+                {renderField('Policy For', verification.policyFor, 'text', 'policyFor')}
+                {renderField('Created At', verification.createdAt, 'date', 'createdAt')}
+                {renderField('Last Updated', verification.updatedAt, 'date', 'updatedAt')}
               </div>
             </div>
 
@@ -476,14 +723,14 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Product Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Product Name', editData?.productName, 'text', 'productName')}
-                {renderField('PT', editData?.pt, 'text', 'pt')}
-                {renderField('PPT', editData?.ppt, 'text', 'ppt')}
-                {renderField('Plan Variant', editData?.planVariant, 'text', 'planVariant')}
-                {renderField('Sum Assured', editData?.sumAssured, 'text', 'sumAssured')}
-                {renderField('Smoker', editData?.isSmoker, 'text', 'isSmoker')}
-                {renderField('Mode of Payment', editData?.modeOfPayment, 'text', 'modeOfPayment')}
-                {renderField('Premium Payment Method', editData?.premiumPaymentMethod, 'text', 'premiumPaymentMethod')}
+                {renderField('Product Name', verification.productName, 'text', 'productName')}
+                {renderField('PT', verification.pt, 'text', 'pt')}
+                {renderField('PPT', verification.ppt, 'text', 'ppt')}
+                {renderField('Plan Variant', verification.planVariant, 'text', 'planVariant')}
+                {renderField('Sum Assured', verification.sumAssured, 'text', 'sumAssured')}
+                {renderField('Smoker', verification.isSmoker, 'text', 'isSmoker')}
+                {renderField('Mode of Payment', verification.modeOfPayment, 'text', 'modeOfPayment')}
+                {renderField('Premium Payment Method', verification.premiumPaymentMethod, 'text', 'premiumPaymentMethod')}
               </div>
             </div>
 
@@ -491,24 +738,24 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Name', editData?.name, 'text', 'name')}
-                {renderField('Mobile Number', editData?.mobileNo, 'text', 'mobileNo')}
-                {renderField('Alternate Number', editData?.alternateNo, 'text', 'alternateNo')}
-                {renderField('Email', editData?.email, 'text', 'email')}
-                {renderField('Date of Birth', editData?.dateOfBirth, 'date', 'dateOfBirth')}
-                {renderField('Education', editData?.education, 'text', 'education')}
-                {renderField('Occupation', editData?.occupation, 'text', 'occupation')}
-                {renderField('Organization Name', editData?.organizationName, 'text', 'organizationName')}
-                {renderField('Work Belongs To', editData?.workBelongsTo, 'text', 'workBelongsTo')}
-                {renderField('Annual Income', editData?.annualIncome, 'text', 'annualIncome')}
-                {renderField('Years of Working', editData?.yearsOfWorking, 'text', 'yearsOfWorking')}
-                {renderField('Marital Status', editData?.maritalStatus, 'text', 'maritalStatus')}
-                {renderField('Place of Birth', editData?.placeOfBirth, 'text', 'placeOfBirth')}
+                {renderField('Name', verification.name, 'text', 'name')}
+                {renderField('Mobile Number', verification.mobileNo, 'text', 'mobileNo')}
+                {renderField('Alternate Number', verification.alternateNo, 'text', 'alternateNo')}
+                {renderField('Email', verification.email, 'text', 'email')}
+                {renderField('Date of Birth', verification.dateOfBirth, 'date', 'dateOfBirth')}
+                {renderField('Education', verification.education, 'text', 'education')}
+                {renderField('Occupation', verification.occupation, 'text', 'occupation')}
+                {renderField('Organization Name', verification.organizationName, 'text', 'organizationName')}
+                {renderField('Work Belongs To', verification.workBelongsTo, 'text', 'workBelongsTo')}
+                {renderField('Annual Income', verification.annualIncome, 'text', 'annualIncome')}
+                {renderField('Years of Working', verification.yearsOfWorking, 'text', 'yearsOfWorking')}
+                {renderField('Marital Status', verification.maritalStatus, 'text', 'maritalStatus')}
+                {renderField('Place of Birth', verification.placeOfBirth, 'text', 'placeOfBirth')}
                 <div className="md:col-span-3">
-                  {renderField('Current Address', editData?.currentAddress, 'text', 'currentAddress')}
+                  {renderField('Current Address', verification.currentAddress, 'text', 'currentAddress')}
                 </div>
                 <div className="md:col-span-3">
-                  {renderField('Permanent Address', editData?.permanentAddress, 'text', 'permanentAddress')}
+                  {renderField('Permanent Address', verification.permanentAddress, 'text', 'permanentAddress')}
                 </div>
               </div>
             </div>
@@ -517,17 +764,17 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Family Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Father\'s Name', editData?.fatherName, 'text', 'fatherName')}
-                {renderField('Father\'s Age', editData?.fatherAge, 'text', 'fatherAge')}
-                {renderField('Father\'s Status', editData?.fatherStatus, 'text', 'fatherStatus')}
-                {renderField('Mother\'s Name', editData?.motherName, 'text', 'motherName')}
-                {renderField('Mother\'s Age', editData?.motherAge, 'text', 'motherAge')}
-                {renderField('Mother\'s Status', editData?.motherStatus, 'text', 'motherStatus')}
-                {renderField('Spouse\'s Name', editData?.spouseName, 'text', 'spouseName')}
-                {renderField('Spouse\'s Age', editData?.spouseAge, 'text', 'spouseAge')}
-                {renderField('Nominee Name', editData?.nomineeName, 'text', 'nomineeName')}
-                {renderField('Nominee Relation', editData?.nomineeRelation, 'text', 'nomineeRelation')}
-                {renderField('Nominee Date of Birth', editData?.nomineeDOB, 'date', 'nomineeDOB')}
+                {renderField('Father\'s Name', verification.fatherName, 'text', 'fatherName')}
+                {renderField('Father\'s Age', verification.fatherAge, 'text', 'fatherAge')}
+                {renderField('Father\'s Status', verification.fatherStatus, 'text', 'fatherStatus')}
+                {renderField('Mother\'s Name', verification.motherName, 'text', 'motherName')}
+                {renderField('Mother\'s Age', verification.motherAge, 'text', 'motherAge')}
+                {renderField('Mother\'s Status', verification.motherStatus, 'text', 'motherStatus')}
+                {renderField('Spouse\'s Name', verification.spouseName, 'text', 'spouseName')}
+                {renderField('Spouse\'s Age', verification.spouseAge, 'text', 'spouseAge')}
+                {renderField('Nominee Name', verification.nomineeName, 'text', 'nomineeName')}
+                {renderField('Nominee Relation', verification.nomineeRelation, 'text', 'nomineeRelation')}
+                {renderField('Nominee Date of Birth', verification.nomineeDOB, 'date', 'nomineeDOB')}
               </div>
             </div>
 
@@ -535,16 +782,16 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Life Assured Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('LA Proposal', editData?.laProposal, 'text', 'laProposal')}
-                {renderField('LA Name', editData?.laName, 'text', 'laName')}
-                {renderField('LA Date of Birth', editData?.laDob, 'date', 'laDob')}
-                {renderField('Age', editData?.age, 'text', 'age')}
-                {renderField('Height (ft)', editData?.heightFt, 'text', 'heightFt')}
-                {renderField('Height (inches)', editData?.heightIn, 'text', 'heightIn')}
-                {renderField('Weight', editData?.weight, 'text', 'weight')}
-                {renderField('Designation', editData?.designation, 'text', 'designation')}
-                {renderField('Existing Policy', editData?.existingPolicy, 'text', 'existingPolicy')}
-                {renderField('Premium Amount', editData?.premiumAmount, 'text', 'premiumAmount')}
+                {renderField('LA Proposal', verification.laProposal, 'text', 'laProposal')}
+                {renderField('LA Name', verification.laName, 'text', 'laName')}
+                {renderField('LA Date of Birth', verification.laDob, 'date', 'laDob')}
+                {renderField('Age', verification.age, 'text', 'age')}
+                {renderField('Height (ft)', verification.heightFt, 'text', 'heightFt')}
+                {renderField('Height (inches)', verification.heightIn, 'text', 'heightIn')}
+                {renderField('Weight', verification.weight, 'text', 'weight')}
+                {renderField('Designation', verification.designation, 'text', 'designation')}
+                {renderField('Existing Policy', verification.existingPolicy, 'text', 'existingPolicy')}
+                {renderField('Premium Amount', verification.premiumAmount, 'text', 'premiumAmount')}
                 <div className="md:col-span-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">Remarks</label>
@@ -585,8 +832,8 @@ export default function TermInsuranceVerificationPage() {
                 <div>
                   <h3 className="text-md font-medium text-gray-900 mb-3">Document Numbers</h3>
                   <div className="space-y-3">
-                    {renderField('PAN Number', editData?.panNumber, 'text', 'panNumber')}
-                    {renderField('Aadhaar Number', editData?.aadharNumber, 'text', 'aadharNumber')}
+                    {renderField('PAN Number', verification.panNumber, 'text', 'panNumber')}
+                    {renderField('Aadhaar Number', verification.aadharNumber, 'text', 'aadharNumber')}
                   </div>
                 </div>
                 <div>
@@ -604,31 +851,7 @@ export default function TermInsuranceVerificationPage() {
             </div>
 
             {/* PLVC Video Section */}
-            {verification.plvcVideo && (
-              <div className="mt-8">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">PLVC Verification Video</h2>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <video
-                    controls
-                    className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
-                    src={verification.plvcVideo}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                  <div className="flex items-center justify-between max-w-3xl mx-auto mt-2">
-                    <button
-                      onClick={() => window.open(verification.plvcVideo, '_blank')}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      Open Video
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {renderCallRecordings()}
 
             {/* Status and Save Button */}
             <div>
@@ -658,78 +881,163 @@ export default function TermInsuranceVerificationPage() {
                 </div>
               </div>
 
-              {/* Payment Screenshot Upload Section */}
+              {/* Payment Screenshot and BI Document Upload Section */}
               {editStatus === 'payment_done' && (
                 <div className="mt-6 border-t pt-6">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Payment Screenshot</h3>
-                  {verification?.paymentScreenshot ? (
-                    <div className="space-y-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <img 
-                          src={verification.paymentScreenshot} 
-                          alt="Payment Screenshot"
-                          className="max-w-full h-auto rounded-lg shadow-lg"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500">
-                          Payment screenshot uploaded successfully
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => window.open(verification.paymentScreenshot, '_blank')}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                          >
-                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View Screenshot
-                          </button>
-                          <button
-                            onClick={handleChangeScreenshot}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                          >
-                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Change Screenshot
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 max-w-3xl mx-auto">
-                      <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
-                        <div className="text-center">
-                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <div className="mt-4">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              ref={paymentScreenshotRef}
-                              onChange={handlePaymentScreenshotUpload}
-                              disabled={paymentScreenshotUploading}
-                              className="hidden"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Payment Screenshot */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 mb-4">Payment Screenshot</h3>
+                      {verification?.paymentScreenshot ? (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <img 
+                              src={verification.paymentScreenshot} 
+                              alt="Payment Screenshot"
+                              className="max-w-full h-auto rounded-lg shadow-lg"
                             />
-                            <button
-                              onClick={handleChangeScreenshot}
-                              disabled={paymentScreenshotUploading}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                              {paymentScreenshotUploading ? 'Uploading...' : 'Upload Screenshot'}
-                            </button>
                           </div>
-                          <p className="mt-2 text-sm text-gray-500">
-                            Upload payment screenshot (JPG, PNG, etc. - max 10MB)
-                          </p>
-                          {error && <div className="text-red-600 mt-2">{error}</div>}
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-500">
+                              Payment screenshot uploaded successfully
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => window.open(verification.paymentScreenshot, '_blank')}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View Screenshot
+                              </button>
+                              <button
+                                onClick={handleChangeScreenshot}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Change Screenshot
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
+                            <div className="text-center">
+                              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <div className="mt-4">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  ref={paymentScreenshotRef}
+                                  onChange={handlePaymentScreenshotUpload}
+                                  disabled={paymentScreenshotUploading}
+                                  className="hidden"
+                                />
+                                <button
+                                  onClick={handleChangeScreenshot}
+                                  disabled={paymentScreenshotUploading}
+                                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  {paymentScreenshotUploading ? 'Uploading...' : 'Upload Screenshot'}
+                                </button>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-500">
+                                Upload payment screenshot (JPG, PNG, etc. - max 10MB)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* BI Document */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 mb-4">BI Document</h3>
+                      {verification?.biDocument ? (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            {verification.biDocument.endsWith('.pdf') ? (
+                              <div className="aspect-[3/4] bg-white rounded-lg shadow-lg flex items-center justify-center">
+                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <img 
+                                src={verification.biDocument} 
+                                alt="BI Document"
+                                className="max-w-full h-auto rounded-lg shadow-lg"
+                              />
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-500">
+                              BI document uploaded successfully
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => window.open(verification.biDocument, '_blank')}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View Document
+                              </button>
+                              <button
+                                onClick={handleChangeBiDocument}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Change Document
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
+                            <div className="text-center">
+                              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <div className="mt-4">
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  ref={biDocumentRef}
+                                  onChange={handleBiDocumentUpload}
+                                  disabled={biDocumentUploading}
+                                  className="hidden"
+                                />
+                                <button
+                                  onClick={handleChangeBiDocument}
+                                  disabled={biDocumentUploading}
+                                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  {biDocumentUploading ? 'Uploading...' : 'Upload BI Document'}
+                                </button>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-500">
+                                Upload BI document (JPG, PNG, PDF - max 10MB)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {error && <div className="text-red-600 mt-4 text-center">{error}</div>}
                 </div>
               )}
 

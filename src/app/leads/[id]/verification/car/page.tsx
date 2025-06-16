@@ -12,6 +12,7 @@ interface CarInsuranceVerification {
   createdAt: string;
   updatedAt: string;
   paymentScreenshot?: string;
+  biDocument?: string;  // New field for BI document
 
   // Company Selection
   selectedCompany: string;
@@ -59,6 +60,8 @@ export default function CarInsuranceVerificationPage() {
   const [newRemark, setNewRemark] = useState('');
   const [paymentScreenshotUploading, setPaymentScreenshotUploading] = useState(false);
   const paymentScreenshotRef = useRef<HTMLInputElement | null>(null);
+  const [biDocumentUploading, setBiDocumentUploading] = useState(false);
+  const biDocumentRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -227,6 +230,51 @@ export default function CarInsuranceVerificationPage() {
   const handleChangeScreenshot = () => {
     if (paymentScreenshotRef.current) {
       paymentScreenshotRef.current.click();
+    }
+  };
+
+  // BI Document upload handler
+  const handleBiDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    // Check file type
+    if (!file.type.startsWith('image/') && !file.type.startsWith('application/pdf')) {
+      setError('Please upload only image files (JPG, PNG) or PDF files');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      setError('File size should be less than 10MB');
+      return;
+    }
+    
+    setBiDocumentUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+      const res = await fetch(`/api/leads/${params.id}/car-insurance/bi-document`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Failed to upload file');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
+    } finally {
+      setBiDocumentUploading(false);
+      if (biDocumentRef.current) biDocumentRef.current.value = '';
+    }
+  };
+
+  const handleChangeBiDocument = () => {
+    if (biDocumentRef.current) {
+      biDocumentRef.current.click();
     }
   };
 
@@ -536,78 +584,163 @@ export default function CarInsuranceVerificationPage() {
                 </div>
               </div>
 
-              {/* Payment Screenshot Upload Section */}
+              {/* Payment Screenshot and BI Document Upload Section */}
               {editStatus === 'payment_done' && (
                 <div className="mt-6 border-t pt-6">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Payment Screenshot</h3>
-                  {verification?.paymentScreenshot ? (
-                    <div className="space-y-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <img 
-                          src={verification.paymentScreenshot} 
-                          alt="Payment Screenshot"
-                          className="max-w-full h-auto rounded-lg shadow-lg"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-500">
-                          Payment screenshot uploaded successfully
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => window.open(verification.paymentScreenshot, '_blank')}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                          >
-                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View Screenshot
-                          </button>
-                          <button
-                            onClick={handleChangeScreenshot}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                          >
-                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Change Screenshot
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 max-w-3xl mx-auto">
-                      <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
-                        <div className="text-center">
-                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <div className="mt-4">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              ref={paymentScreenshotRef}
-                              onChange={handlePaymentScreenshotUpload}
-                              disabled={paymentScreenshotUploading}
-                              className="hidden"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Payment Screenshot */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 mb-4">Payment Screenshot</h3>
+                      {verification?.paymentScreenshot ? (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <img 
+                              src={verification.paymentScreenshot} 
+                              alt="Payment Screenshot"
+                              className="max-w-full h-auto rounded-lg shadow-lg"
                             />
-                            <button
-                              onClick={handleChangeScreenshot}
-                              disabled={paymentScreenshotUploading}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                              {paymentScreenshotUploading ? 'Uploading...' : 'Upload Screenshot'}
-                            </button>
                           </div>
-                          <p className="mt-2 text-sm text-gray-500">
-                            Upload payment screenshot (JPG, PNG, etc. - max 10MB)
-                          </p>
-                          {error && <div className="text-red-600 mt-2">{error}</div>}
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-500">
+                              Payment screenshot uploaded successfully
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => window.open(verification.paymentScreenshot, '_blank')}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View Screenshot
+                              </button>
+                              <button
+                                onClick={handleChangeScreenshot}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Change Screenshot
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
+                            <div className="text-center">
+                              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <div className="mt-4">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  ref={paymentScreenshotRef}
+                                  onChange={handlePaymentScreenshotUpload}
+                                  disabled={paymentScreenshotUploading}
+                                  className="hidden"
+                                />
+                                <button
+                                  onClick={handleChangeScreenshot}
+                                  disabled={paymentScreenshotUploading}
+                                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  {paymentScreenshotUploading ? 'Uploading...' : 'Upload Screenshot'}
+                                </button>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-500">
+                                Upload payment screenshot (JPG, PNG, etc. - max 10MB)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* BI Document */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900 mb-4">BI Document</h3>
+                      {verification?.biDocument ? (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            {verification.biDocument.endsWith('.pdf') ? (
+                              <div className="aspect-[3/4] bg-white rounded-lg shadow-lg flex items-center justify-center">
+                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <img 
+                                src={verification.biDocument} 
+                                alt="BI Document"
+                                className="max-w-full h-auto rounded-lg shadow-lg"
+                              />
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-500">
+                              BI document uploaded successfully
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => window.open(verification.biDocument, '_blank')}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                View Document
+                              </button>
+                              <button
+                                onClick={handleChangeBiDocument}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                              >
+                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Change Document
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
+                            <div className="text-center">
+                              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <div className="mt-4">
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  ref={biDocumentRef}
+                                  onChange={handleBiDocumentUpload}
+                                  disabled={biDocumentUploading}
+                                  className="hidden"
+                                />
+                                <button
+                                  onClick={handleChangeBiDocument}
+                                  disabled={biDocumentUploading}
+                                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  {biDocumentUploading ? 'Uploading...' : 'Upload BI Document'}
+                                </button>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-500">
+                                Upload BI document (JPG, PNG, PDF - max 10MB)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {error && <div className="text-red-600 mt-4 text-center">{error}</div>}
                 </div>
               )}
 
