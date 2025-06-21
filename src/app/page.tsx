@@ -44,6 +44,7 @@ interface StatsData {
 export default function Home() {
   const [totalLeads, setTotalLeads] = useState(0);
   const [activeLeads, setActiveLeads] = useState(0);
+  const [interestedLeads, setInterestedLeads] = useState(0);
   const [conversionRate, setConversionRate] = useState(0);
   const [recentLeads, setRecentLeads] = useState<LeadType[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -147,8 +148,11 @@ export default function Home() {
         ).length;
         setActiveLeads(activeCount);
 
+        // Calculate interested leads count for the monthly target calculation
+        const interestedCount = userLeads.filter((lead: LeadType) => lead.status === 'Interested').length;
+        setInterestedLeads(interestedCount);
+
         // Calculate conversion rate for user's leads
-        const interestedCount = userLeads.filter((lead: LeadType) => lead.status === 'Won').length;
         const rate = userLeads.length > 0 ? Math.round((interestedCount / userLeads.length) * 100) : 0;
         setConversionRate(rate);
 
@@ -271,10 +275,17 @@ export default function Home() {
     <div className="flex flex-col gap-6">
       {/* Welcome Message */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-          Welcome, {userName}!
-        </h1>
-        <p className="text-gray-600 mt-2 text-sm sm:text-base">Here's your dashboard overview</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Welcome, {userName}!
+            </h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Here's your dashboard overview</p>
+          </div>
+          <div className="text-right">
+            <h1 className="text-lg sm:text-xl font-bold text-blue-700">GOPRO CRM</h1>
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -362,7 +373,7 @@ export default function Home() {
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Monthly Target</p>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {Math.round((activeLeads / 50) * 100)}%
+                  {Math.round((interestedLeads / 10) * 100)}%
                 </h3>
               </div>
               <div className="bg-indigo-100 p-2 sm:p-3 rounded-full">
@@ -378,7 +389,7 @@ export default function Home() {
             <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-indigo-600 h-2 rounded-full" 
-                style={{ width: `${Math.min(Math.round((activeLeads / 50) * 100), 100)}%` }}
+                style={{ width: `${Math.min(Math.round((interestedLeads / 10) * 100), 100)}%` }}
               ></div>
             </div>
           </div>

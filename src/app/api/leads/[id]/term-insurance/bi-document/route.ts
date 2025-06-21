@@ -20,7 +20,7 @@ export async function POST(
     const leadId = params.id;
     const formData = await request.formData();
     
-    const file = formData.get('screenshot') as File;
+    const file = formData.get('document') as File;
 
     if (!file) {
       return NextResponse.json(
@@ -30,9 +30,9 @@ export async function POST(
     }
 
     // Check file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('application/pdf')) {
       return NextResponse.json(
-        { error: 'Please upload only image files (JPG, PNG, etc.)' },
+        { error: 'Please upload only image files (JPG, PNG) or PDF files' },
         { status: 400 }
       );
     }
@@ -60,7 +60,7 @@ export async function POST(
     
     const timestamp = Date.now();
     const fileName = `${timestamp}-${file.name}`;
-    const key = `term-insurance/${leadId}/payment-screenshot/${fileName}`;
+    const key = `term-insurance/${leadId}/bi-document/${fileName}`;
 
     await s3Client.send(new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
@@ -76,19 +76,19 @@ export async function POST(
       verification.paymentDocuments = [];
     }
 
-    // Find existing Payment Screenshot group
-    let paymentScreenshotGroup = verification.paymentDocuments.find((doc: any) => doc.documentType === 'Payment Screenshot');
+    // Find existing BI File group
+    let biDocumentGroup = verification.paymentDocuments.find((doc: any) => doc.documentType === 'BI File');
 
-    if (paymentScreenshotGroup) {
+    if (biDocumentGroup) {
       // If group exists, update its files
-      paymentScreenshotGroup.files = [{
+      biDocumentGroup.files = [{
         url: fileUrl,
         fileName: file.name,
       }];
     } else {
       // If group doesn't exist, create and push it with the file
       verification.paymentDocuments.push({
-        documentType: 'Payment Screenshot',
+        documentType: 'BI File',
         files: [{
           url: fileUrl,
           fileName: file.name,
@@ -108,9 +108,9 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Error uploading payment screenshot:', error);
+    console.error('Error uploading BI document:', error);
     return NextResponse.json(
-      { error: 'Failed to upload payment screenshot' },
+      { error: 'Failed to upload BI document' },
       { status: 500 }
     );
   }

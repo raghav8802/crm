@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import  connectDB  from '@/lib/db';
+import connectDB from '@/lib/db';
 import TermInsuranceVerification from '@/models/TermInsuranceVerification';
-import { uploadFile } from '@/utils/fileUpload';
 
 export async function POST(
   request: NextRequest,
@@ -10,44 +9,17 @@ export async function POST(
   try {
     await connectDB();
 
-    const formData = await request.formData();
+    const data = await request.json();
     const leadId = params.id;
 
-    // Handle file uploads
-    const fileFields = [
-      'panPhoto',
-      'aadharPhoto',
-      'userPhoto',
-      'cancelledCheque',
-      'bankStatement',
-      'otherDocument'
-    ];
-
-    const uploadedFiles: { [key: string]: string } = {};
-
-    for (const field of fileFields) {
-      const file = formData.get(field) as File;
-      if (file) {
-        const filePath = await uploadFile(file, leadId, field);
-        uploadedFiles[field] = filePath;
-      }
-    }
-
-    // Build verificationData, skipping file fields
-    const verificationData: Record<string, any> = {
+    // Create a new verification record with the structured data
+    const verificationData = {
       leadId,
       status: 'submitted',
       insuranceType: 'term_insurance',
-      ...uploadedFiles
+      ...data,
     };
 
-    for (const [key, value] of formData.entries()) {
-      if (!fileFields.includes(key)) {
-        verificationData[key] = value;
-      }
-    }
-
-    // Create new verification record
     const verification = await TermInsuranceVerification.create(verificationData);
 
     return NextResponse.json({

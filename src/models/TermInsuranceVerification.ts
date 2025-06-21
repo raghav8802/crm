@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ITermInsuranceVerification extends Document {
   leadId: mongoose.Types.ObjectId;
-  status: 'submitted' | 'pending' | 'approved' | 'rejected';
+  status: 'submitted' | 'processing' | 'link_created' | 'payment_done' | 'PLVC_verification' | 'PLVC_done' | 'pending' | 'approved' | 'rejected';
   insuranceType: 'term_insurance';
   
   // Initial Selection
@@ -69,25 +69,54 @@ export interface ITermInsuranceVerification extends Document {
     user: string;
     timestamp: Date;
   }>;
-  plvcVideo: string;
 
-  // Documents
+  // NEW DOCUMENT STRUCTURE
+  documents: Array<{
+    documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
+    files: Array<{
+      url: string;
+      fileName: string;
+    }>;
+  }>;
+
+  paymentDocuments: Array<{
+    documentType: 'Payment Screenshot' | 'BI File';
+    files: Array<{
+      url: string;
+      fileName: string;
+    }>;
+  }>;
+
+  verificationDocuments: VerificationDocumentGroup[];
+
+  // Documents (keep panNumber and aadharNumber)
   panNumber: string;
-  panPhoto: string; // URL or path to stored file
   aadharNumber: string;
-  aadharPhoto: string; // URL or path to stored file
-  userPhoto: string; // URL or path to stored file
-  cancelledCheque: string; // URL or path to stored file
-  bankStatement: string; // URL or path to stored file
-  otherDocument: string; // URL or path to stored file
 
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
-
-  // Payment Screenshot
-  paymentScreenshot: string;
 }
+
+export interface VerificationDocumentGroup {
+  documentType: 'Sales Audio' | 'Verification Call' | 'Welcome Call';
+  files: Array<{
+    fileType: 'audio' | 'video';
+    url: string;
+    fileName: string;
+  }>;
+}
+
+const fileSchema = new Schema({
+  url: { type: String, required: true },
+  fileName: { type: String, required: true }
+}, { _id: false });
+
+const verificationFileSchema = new Schema({
+  fileType: { type: String, enum: ['audio', 'video'], required: true },
+  url: { type: String, required: true },
+  fileName: { type: String, required: true }
+}, { _id: false });
 
 const TermInsuranceVerificationSchema = new Schema({
   leadId: {
@@ -97,7 +126,7 @@ const TermInsuranceVerificationSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['submitted', 'pending', 'approved', 'rejected'],
+    enum: ['submitted', 'processing', 'link_created', 'payment_done', 'PLVC_verification', 'PLVC_done', 'pending', 'approved', 'rejected'],
     default: 'submitted'
   },
   insuranceType: {
@@ -200,24 +229,28 @@ const TermInsuranceVerificationSchema = new Schema({
     user: String,
     timestamp: { type: Date, default: Date.now }
   }],
-  plvcVideo: String,
 
-  // Documents
+  // NEW DOCUMENT STRUCTURE
+  documents: [{
+    documentType: { type: String, enum: ['PAN', 'Aadhaar', 'Photo', 'Cancelled Cheque', 'Bank Statement', 'Other'], required: true },
+    files: [fileSchema]
+  }],
+  paymentDocuments: [{
+    documentType: { type: String, enum: ['Payment Screenshot', 'BI File'], required: true },
+    files: [fileSchema]
+  }],
+  verificationDocuments: [{
+    documentType: { type: String, enum: ['Sales Audio', 'Verification Call', 'Welcome Call'], required: true },
+    files: [verificationFileSchema]
+  }],
+
+  // Documents (keep panNumber and aadharNumber)
   panNumber: String,
-  panPhoto: String,
   aadharNumber: String,
-  aadharPhoto: String,
-  userPhoto: String,
-  cancelledCheque: String,
-  bankStatement: String,
-  otherDocument: String,
 
   // Timestamps
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-
-  // Payment Screenshot
-  paymentScreenshot: String
 }, {
   timestamps: true
 });

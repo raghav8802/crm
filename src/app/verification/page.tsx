@@ -119,6 +119,19 @@ export default function VerificationPage() {
     }
   };
 
+  const maskPhoneNumber = (phone: string) => {
+    if (phone.length <= 4) return phone;
+    return phone.slice(0, 2) + '*'.repeat(phone.length - 4) + phone.slice(-2);
+  };
+
+  const maskEmail = (email: string) => {
+    if (!email || email.length <= 3) return email;
+    const [localPart, domain] = email.split('@');
+    if (!domain) return email;
+    const maskedLocal = localPart.slice(0, 2) + '*'.repeat(localPart.length - 2);
+    return `${maskedLocal}@${domain}`;
+  };
+
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -134,10 +147,10 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Verification Queue</h1>
-        <p className="text-gray-600 mt-2">Review and verify insurance applications</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Verification Queue</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">Review and verify insurance applications</p>
       </div>
 
       <div className="mb-4">
@@ -146,11 +159,12 @@ export default function VerificationPage() {
           placeholder="Search by name, phone, or email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
         />
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white shadow-sm rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -173,10 +187,10 @@ export default function VerificationPage() {
                     {lead.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lead.phoneNumber}
+                    {currentUser?.role === 'sales_manager' ? maskPhoneNumber(lead.phoneNumber) : lead.phoneNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lead.email || '-'}
+                    {currentUser?.role === 'sales_manager' ? (lead.email ? maskEmail(lead.email) : '-') : (lead.email || '-')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {verification?.type.replace('_', ' ').toUpperCase() || '-'}
@@ -195,16 +209,18 @@ export default function VerificationPage() {
                     {verification ? new Date(verification.updatedAt).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <Link
-                      href={
-                        verification
-                          ? `/leads/${lead._id}/verification/${getInsuranceTypePath(verification.type)}`
-                          : '#'
-                      }
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      View Details
-                    </Link>
+                    {currentUser?.role !== 'sales_manager' && (
+                      <Link
+                        href={
+                          verification
+                            ? `/leads/${lead._id}/verification/${getInsuranceTypePath(verification.type)}`
+                            : '#'
+                        }
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        View Details
+                      </Link>
+                    )}
                   </td>
                 </tr>
               );
@@ -212,6 +228,69 @@ export default function VerificationPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {filteredLeads.map((lead) => {
+          const verification = getVerificationStatus(lead._id);
+          return (
+            <div key={lead._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{lead.name}</h3>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <span className="font-medium w-16">Phone:</span>
+                      <span>{currentUser?.role === 'sales_manager' ? maskPhoneNumber(lead.phoneNumber) : lead.phoneNumber}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium w-16">Email:</span>
+                      <span>{currentUser?.role === 'sales_manager' ? (lead.email ? maskEmail(lead.email) : '-') : (lead.email || '-')}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium w-16">Type:</span>
+                      <span>{verification?.type.replace('_', ' ').toUpperCase() || '-'}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium w-16">Assigned:</span>
+                      <span>{getUserName(lead.assignedTo)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium w-16">Updated:</span>
+                      <span>{verification ? new Date(verification.updatedAt).toLocaleDateString() : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end space-y-2">
+                  {verification && (
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(verification.status)}`}>
+                      {verification.status.toUpperCase()}
+                    </span>
+                  )}
+                  {currentUser?.role !== 'sales_manager' && (
+                    <Link
+                      href={
+                        verification
+                          ? `/leads/${lead._id}/verification/${getInsuranceTypePath(verification.type)}`
+                          : '#'
+                      }
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View Details
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {filteredLeads.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500 text-sm sm:text-base">No verification records found.</p>
+        </div>
+      )}
     </div>
   );
 } 

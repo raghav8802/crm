@@ -38,7 +38,13 @@ export default function LeadDetailsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch lead data
+        // Fetch users first to ensure names are available for rendering
+        const usersRes = await fetch('/api/users');
+        if (!usersRes.ok) throw new Error('Failed to fetch users');
+        const usersData = await usersRes.json();
+        setUsers(usersData);
+
+        // Then fetch lead data
         const leadRes = await fetch(`/api/leads/${id}`);
         if (!leadRes.ok) throw new Error('Failed to fetch lead');
         const leadData = await leadRes.json();
@@ -46,11 +52,6 @@ export default function LeadDetailsPage() {
         setSelectedStatus(leadData.status);
         setSelectedUser(leadData.assignedTo || '');
 
-        // Fetch users
-        const usersRes = await fetch('/api/users');
-        if (!usersRes.ok) throw new Error('Failed to fetch users');
-        const usersData = await usersRes.json();
-        setUsers(usersData);
       } catch (error) {
         console.error('Error:', error);
         alert('Error loading data');
@@ -422,7 +423,7 @@ export default function LeadDetailsPage() {
               <dt className="text-sm font-medium text-gray-500">Assigned From</dt>
               <dd className="mt-1 text-sm text-gray-900">
                 {lead?.assignedFrom
-                  ? (users.find(u => u._id === lead.assignedFrom)?.name || lead.assignedFrom)
+                  ? (users.find(u => u._id === lead.assignedFrom)?.name || 'Unknown User')
                   : '-'}
               </dd>
             </div>

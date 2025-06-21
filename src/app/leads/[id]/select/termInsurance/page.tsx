@@ -6,6 +6,15 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LeadType } from '@/models/Lead';
 
+interface DocumentFile {
+  url: string;
+  fileName: string;
+}
+
+interface VerificationFile extends DocumentFile {
+  fileType: 'audio' | 'video';
+}
+
 interface FormData {
   // Initial Selection
   residentialStatus: 'Indian' | 'NRI';
@@ -69,14 +78,55 @@ interface FormData {
 
   // Step 4
   panNumber: string;
-  panPhoto: File | null;
   aadharNumber: string;
-  aadharPhoto: File | null;
-  userPhoto: File | null;
-  cancelledCheque: File | null;
-  bankStatement: File | null;
-  otherDocument: File | null;
+  documents: Array<{
+    documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
+    files: DocumentFile[];
+  }>;
 }
+
+// New Reusable Component for Multi-File Uploads
+const MultiFileInput = ({
+  label,
+  documentType,
+  files,
+  onFileChange,
+}: {
+  label: string;
+  documentType: string;
+  files: File[];
+  onFileChange: (documentType: string, newFiles: File[]) => void;
+}) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      onFileChange(documentType, Array.from(e.target.files));
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <input
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+        className="mt-1 block w-full text-sm text-gray-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-md file:border-0
+          file:text-sm file:font-semibold
+          file:bg-blue-50 file:text-blue-700
+          hover:file:bg-blue-100"
+      />
+      <div className="mt-2 space-y-2">
+        {files.map((file, index) => (
+          <div key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded-md">
+            <span className="text-sm text-gray-800 truncate">{file.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function VerificationPage() {
   const { id } = useParams();
@@ -85,6 +135,7 @@ export default function VerificationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
+  const [stagedFiles, setStagedFiles] = useState<Array<{ documentType: string; files: File[] }>>([]);
   const [formData, setFormData] = useState<FormData>({
     // Initial Selection
     residentialStatus: 'Indian',
@@ -148,13 +199,8 @@ export default function VerificationPage() {
 
     // Step 4
     panNumber: '',
-    panPhoto: null,
     aadharNumber: '',
-    aadharPhoto: null,
-    userPhoto: null,
-    cancelledCheque: null,
-    bankStatement: null,
-    otherDocument: null,
+    documents: [],
   });
 
   const fetchData = useCallback(async () => {
@@ -197,12 +243,18 @@ export default function VerificationPage() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof FormData) => {
-    const file = e.target.files?.[0] || null;
-    setFormData(prev => ({
-      ...prev,
-      [field]: file
-    }));
+  const handleFileChange = (documentType: string, newFiles: File[]) => {
+    setStagedFiles(prev => {
+      const updatedStagedFiles = [...prev];
+      const docIndex = updatedStagedFiles.findIndex(doc => doc.documentType === documentType);
+
+      if (docIndex > -1) {
+        updatedStagedFiles[docIndex].files.push(...newFiles);
+      } else {
+        updatedStagedFiles.push({ documentType, files: newFiles });
+      }
+      return updatedStagedFiles;
+    });
   };
 
   const nextStep = () => {
@@ -214,26 +266,51 @@ export default function VerificationPage() {
   };
 
   const handleSubmit = async () => {
-    try {
+    setLoading(true);
       setError('');
       
-      // Create FormData object
-      const formDataToSend = new FormData();
-      
-      // Add all form fields that have values
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value instanceof File) {
-          if (value) { // Only append if file exists
-            formDataToSend.append(key, value);
-          }
-        } else if (value !== null && value !== undefined && value !== '') {
-          formDataToSend.append(key, value.toString());
-        }
-      });
+    try {
+      // 1. Upload all staged files and build the documents array
+      const finalDocuments: FormData['documents'] = [];
+      for (const stagedDoc of stagedFiles) {
+        const uploadedFiles: DocumentFile[] = [];
+        for (const file of stagedDoc.files) {
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', file);
+          uploadFormData.append('leadId', id as string);
+          uploadFormData.append('category', 'docs');
 
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadFormData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          
+          const { url, fileName } = await response.json();
+          uploadedFiles.push({ url, fileName });
+        }
+        finalDocuments.push({
+          documentType: stagedDoc.documentType as any,
+          files: uploadedFiles,
+        });
+      }
+
+      // 2. Create the final payload with uploaded document URLs
+      const finalFormData = {
+        ...formData,
+        documents: finalDocuments,
+      };
+
+      // 3. Submit the final payload
       const response = await fetch(`/api/leads/${id}/term-insurance`, {
         method: 'POST',
-        body: formDataToSend,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(finalFormData),
       });
 
       if (!response.ok) {
@@ -245,6 +322,8 @@ export default function VerificationPage() {
     } catch (error) {
       console.error('Error saving form:', error);
       setError(error instanceof Error ? error.message : 'Failed to save form data');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -888,20 +967,12 @@ export default function VerificationPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">PAN Card Photo</label>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => handleFileChange(e, 'panPhoto')}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-        </div>
+        <MultiFileInput
+          label="PAN Card Photo"
+          documentType="PAN"
+          files={stagedFiles.find(d => d.documentType === 'PAN')?.files || []}
+          onFileChange={handleFileChange}
+        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Aadhaar Number</label>
@@ -914,80 +985,40 @@ export default function VerificationPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Aadhaar Card Photo</label>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => handleFileChange(e, 'aadharPhoto')}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-        </div>
+        <MultiFileInput
+          label="Aadhaar Card Photo"
+          documentType="Aadhaar"
+          files={stagedFiles.find(d => d.documentType === 'Aadhaar')?.files || []}
+          onFileChange={handleFileChange}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Photo</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, 'userPhoto')}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-        </div>
+        <MultiFileInput
+          label="Photo"
+          documentType="Photo"
+          files={stagedFiles.find(d => d.documentType === 'Photo')?.files || []}
+          onFileChange={handleFileChange}
+        />
+        
+        <MultiFileInput
+          label="Cancelled Cheque"
+          documentType="Cancelled Cheque"
+          files={stagedFiles.find(d => d.documentType === 'Cancelled Cheque')?.files || []}
+          onFileChange={handleFileChange}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Cancelled Cheque</label>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => handleFileChange(e, 'cancelledCheque')}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-        </div>
+        <MultiFileInput
+          label="Bank Statement"
+          documentType="Bank Statement"
+          files={stagedFiles.find(d => d.documentType === 'Bank Statement')?.files || []}
+          onFileChange={handleFileChange}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Bank Statement</label>
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={(e) => handleFileChange(e, 'bankStatement')}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Other Document</label>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => handleFileChange(e, 'otherDocument')}
-            className="mt-1 block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
-        </div>
+        <MultiFileInput
+          label="Other Document"
+          documentType="Other"
+          files={stagedFiles.find(d => d.documentType === 'Other')?.files || []}
+          onFileChange={handleFileChange}
+        />
       </div>
     </motion.div>
   );
@@ -1052,12 +1083,9 @@ export default function VerificationPage() {
 
           <div className="mb-8">
             <div className="flex items-center space-x-4">
-              <div className={`h-2 w-2 rounded-full ${currentStep >= 0 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`h-2 w-2 rounded-full ${currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`h-2 w-2 rounded-full ${currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`h-2 w-2 rounded-full ${currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`h-2 w-2 rounded-full ${currentStep >= 4 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-              <div className={`h-2 w-2 rounded-full ${currentStep >= 5 ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className={`h-2 w-2 rounded-full ${currentStep >= i ? 'bg-blue-600' : 'bg-gray-300'}`} />
+              ))}
             </div>
           </div>
 

@@ -11,33 +11,41 @@ export default function Sidebar() {
   const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('/api/auth/check');
-        if (response.ok) {
-          const data = await response.json();
-          setUserRole(data.user.role);
+    // Only fetch data if we are not on the login page
+    if (pathname !== '/login') {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch('/api/auth/check');
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.user.role);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
+      };
 
-    const fetchCallbackLaterCount = async () => {
-      try {
-        const response = await fetch('/api/leads/count?status=Callback Later');
-        if (response.ok) {
-          const data = await response.json();
-          setCallbackLaterCount(data.count);
+      const fetchCallbackLaterCount = async () => {
+        try {
+          const response = await fetch('/api/leads/count?status=Callback Later');
+          if (response.ok) {
+            const data = await response.json();
+            setCallbackLaterCount(data.count);
+          }
+        } catch (error) {
+          console.error('Error fetching callback later count:', error);
         }
-      } catch (error) {
-        console.error('Error fetching callback later count:', error);
-      }
-    };
+      };
 
-    fetchUserData();
-    fetchCallbackLaterCount();
-  }, []);
+      fetchUserData();
+      fetchCallbackLaterCount();
+    }
+  }, [pathname]);
+
+  // Hide sidebar on login page
+  if (pathname === '/login') {
+    return null;
+  }
 
   const isActive = (path: string) => {
     return pathname === path;

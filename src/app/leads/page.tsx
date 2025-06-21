@@ -154,6 +154,11 @@ export default function LeadsPage() {
   };
 
   const filteredLeads = leads.filter(lead => {
+    // Exclude leads with 'Won' status
+    if (lead.status === 'Won') {
+      return false;
+    }
+
     // Filter by selected user if one is selected
     if (selectedUserId && lead.assignedTo !== selectedUserId) {
       return false;
@@ -203,69 +208,40 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+    <div className="space-y-4 p-2 sm:p-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
             <span className="text-sm text-gray-600">Total: {filteredLeads.length}</span>
           </div>
           
-          {/* Date Filters */}
           <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative w-full sm:w-48">
-              <select
-                value={selectedMonth}
-                onChange={(e) => {
-                  setSelectedMonth(e.target.value);
-                  setDateRange({ startDate: '', endDate: '' }); // Clear date range when month is selected
-                }}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Month</option>
-                {Array.from({ length: 12 }, (_, i) => {
-                  const date = new Date();
-                  date.setMonth(date.getMonth() - i);
-                  return (
-                    <option key={i} value={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`}>
-                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) => {
-                  setDateRange(prev => ({ ...prev, startDate: e.target.value }));
-                  setSelectedMonth(''); // Clear month selection when date range is selected
-                }}
-                className="w-full sm:w-40 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Start Date"
-              />
-              <input
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) => {
-                  setDateRange(prev => ({ ...prev, endDate: e.target.value }));
-                  setSelectedMonth(''); // Clear month selection when date range is selected
-                }}
-                className="w-full sm:w-40 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="End Date"
-              />
-            </div>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="w-full sm:w-auto bg-green-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-green-700 text-sm sm:text-base"
+            >
+              Import Leads
+            </button>
+            <Link 
+              href="/leads/add" 
+              className="w-full sm:w-auto bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 text-sm sm:text-base text-center"
+            >
+              Add New Lead
+            </Link>
           </div>
+        </div>
 
-          <div className="relative w-full sm:w-64">
+        {/* Filters Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {/* Search Input */}
+          <div className="relative w-full">
             <input
               type="text"
               placeholder="Search leads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {searchQuery && (
               <button
@@ -278,57 +254,168 @@ export default function LeadsPage() {
               </button>
             )}
           </div>
-          {currentUser?.role === 'admin' && (
-          <div className="relative w-full sm:w-48">
+
+          {/* Month Selector */}
+          <div className="w-full">
             <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedMonth}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value);
+                setDateRange({ startDate: '', endDate: '' });
+              }}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Users</option>
-              {users.map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.name}
-                </option>
-              ))}
+              <option value="">Select Month</option>
+              {Array.from({ length: 12 }, (_, i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                return (
+                  <option key={i} value={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`}>
+                    {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </option>
+                );
+              })}
             </select>
           </div>
-          )}
-          <div className="relative w-full sm:w-48">
+
+          {/* Date Range */}
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              value={dateRange.startDate}
+              onChange={(e) => {
+                setDateRange(prev => ({ ...prev, startDate: e.target.value }));
+                setSelectedMonth('');
+              }}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Start Date"
+            />
+            <input
+              type="date"
+              value={dateRange.endDate}
+              onChange={(e) => {
+                setDateRange(prev => ({ ...prev, endDate: e.target.value }));
+                setSelectedMonth('');
+              }}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="End Date"
+            />
+          </div>
+
+          {/* User and Status Filters */}
+          <div className="grid grid-cols-2 gap-2">
+            {currentUser?.role === 'admin' && (
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Users</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Status</option>
               <option value="Fresh">Fresh</option>
               <option value="Interested">Interested</option>
               <option value="Callback Later">Callback Later</option>
               <option value="Wrong Number">Wrong Number</option>
-              <option value="Won">Sale Done</option>
               <option value="Lost">Lost</option>
             </select>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-green-700 text-sm sm:text-base"
-          >
-            Import Leads
-          </button>
-          <Link 
-            href="/leads/add" 
-            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 text-sm sm:text-base"
-          >
-            Add New Lead
-          </Link>
+      </div>
+
+      {/* Table Section */}
+      <div className="bg-white shadow-sm rounded-lg overflow-x-auto">
+        <div className="min-w-full inline-block align-middle">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="hidden sm:table-cell px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="hidden sm:table-cell px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
+                      {searchQuery ? 'No leads found matching your search.' : 'No leads found. Click "Add New Lead" to get started.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLeads.map((lead) => (
+                    <tr key={lead._id} className="hover:bg-gray-50">
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <Link 
+                          href={`/leads/${lead._id}`}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          {lead.name}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap">{lead.phoneNumber}</td>
+                      <td className="hidden sm:table-cell px-3 py-4 whitespace-nowrap">{lead.email || '-'}</td>
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
+                            lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
+                            lead.status === 'Callback Later' ? 'bg-yellow-100 text-yellow-800' :
+                            lead.status === 'Wrong Number' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'}`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="hidden sm:table-cell px-3 py-4 whitespace-nowrap">
+                        {lead.assignedTo ? (
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            {getUserName(lead.assignedTo)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <div className="flex space-x-3">
+                          <Link
+                            href={`/leads/${lead._id}/edit`}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => lead._id && handleDelete(lead._id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h2 className="text-lg sm:text-xl font-semibold mb-4">Import Leads</h2>
             <div className="mb-4">
@@ -380,81 +467,6 @@ export default function LeadsPage() {
           </div>
         </div>
       )}
-
-      <div className="bg-white shadow-sm rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredLeads.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-2 sm:px-6 py-4 text-center text-gray-500">
-                  {searchQuery ? 'No leads found matching your search.' : 'No leads found. Click "Add New Lead" to get started.'}
-                </td>
-              </tr>
-            ) : (
-              filteredLeads.map((lead) => (
-                <tr key={lead._id}>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
-                    <Link 
-                      href={`/leads/${lead._id}`}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      {lead.name}
-                    </Link>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">{lead.phoneNumber}</td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">{lead.email || '-'}</td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${lead.status === 'Fresh' ? 'bg-blue-100 text-blue-800' : 
-                        lead.status === 'Interested' ? 'bg-green-100 text-green-800' :
-                        lead.status === 'Callback Later' ? 'bg-yellow-100 text-yellow-800' :
-                        lead.status === 'Wrong Number' ? 'bg-red-100 text-red-800' :
-                        lead.status === 'Won' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'}`}>
-                      {lead.status === 'Won' ? 'Sale Done' : lead.status}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
-                    {lead.assignedTo ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {getUserName(lead.assignedTo)}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/leads/${lead._id}/edit`}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => lead._id && handleDelete(lead._id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 } 

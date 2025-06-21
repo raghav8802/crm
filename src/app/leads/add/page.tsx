@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { UserType } from '@/models/User';
 
 const educationOptions = [
-  { value: '12', label: '12th' },
+  { value: '10th', label: '10th' },
+  { value: '12th', label: '12th' },
   { value: 'Graduate', label: 'Graduate' },
-  { value: 'Postgraduate', label: 'Postgraduate' },
-  { value: 'PhD', label: 'PhD' },
+  { value: 'Post Graduate', label: 'Post Graduate' },
+  { value: 'Other', label: 'Other' },
 ];
 
 const statusOptions = [
@@ -19,7 +20,7 @@ const statusOptions = [
   { value: 'Call Disconnected', label: 'Call Disconnected' }, 
   { value: 'Callback Later', label: 'Callback Later' },
   { value: 'Wrong Number', label: 'Wrong Number' },
-  { value: 'Won', label: 'Won' },
+  { value: 'Sale Done', label: 'Sale Done' },
   { value: 'Lost', label: 'Lost' },
 ];
 
@@ -33,6 +34,7 @@ const sourceOptions = [
 export default function AddLead() {
   const router = useRouter();
   const [users, setUsers] = useState<UserType[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,7 +46,7 @@ export default function AddLead() {
     tabacoUser: 'no',
     annualIncome: '',
     occupation: '',
-    education: '12',
+    education: '12th',
     address: '',
     status: 'Fresh',
     assignedTo: '',
@@ -65,23 +67,54 @@ export default function AddLead() {
       }
     };
 
+    const fetchCurrentUser = async () => {
+      try {
+        const userRes = await fetch('/api/auth/check', {
+          credentials: 'include',
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData.authenticated && userData.user && userData.user._id) {
+            setCurrentUserId(userData.user._id);
+            setFormData(prev => ({ ...prev, assignedFrom: userData.user._id }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
     fetchUsers();
+    fetchCurrentUser();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if current user ID is available
+    if (!currentUserId) {
+      alert('User session not found. Please refresh the page and try again.');
+      return;
+    }
+    
     setLoading(true);
 
     try {
+      // Ensure assignedFrom is set to current user before submission
+      const finalFormData = {
+        ...formData,
+        assignedFrom: currentUserId
+      };
+
       // Log the form data being sent
-      console.log('Submitting form data:', formData);
+      console.log('Submitting form data:', finalFormData);
 
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(finalFormData),
       });
 
       if (!res.ok) {
@@ -273,11 +306,11 @@ export default function AddLead() {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 
               >
-                <option value="10th">10th</option>
-                <option value="12th">12th</option>
-                <option value="Graduate">Graduate</option>
-                <option value="Post Graduate">Post Graduate</option>
-                <option value="Other">Other</option>
+                {educationOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -295,46 +328,11 @@ export default function AddLead() {
             </div>
 
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status <span className="text-red-500">*</span></label>
-              <select
-                id="status"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700">Assign To <span className="text-red-500">*</span></label>
               <select
                 id="assignedTo"
                 value={formData.assignedTo}
                 onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select User</option>
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.name} ({user.role})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="assignedFrom" className="block text-sm font-medium text-gray-700">Assigned From <span className="text-red-500">*</span></label>
-              <select
-                id="assignedFrom"
-                value={formData.assignedFrom}
-                onChange={(e) => setFormData({ ...formData, assignedFrom: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 required
               >

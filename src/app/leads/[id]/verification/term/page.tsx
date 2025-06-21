@@ -4,6 +4,25 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
+interface File {
+  url: string;
+  fileName: string;
+}
+
+interface VerificationFile extends File {
+  fileType: 'audio' | 'video';
+}
+
+interface DocumentGroup {
+  documentType: string;
+  files: File[];
+}
+
+interface VerificationDocumentGroup {
+  documentType: string;
+  files: VerificationFile[];
+}
+
 interface TermInsuranceVerification {
   _id: string;
   leadId: string;
@@ -11,8 +30,6 @@ interface TermInsuranceVerification {
   status: 'submitted' | 'processing' | 'link_created' | 'payment_done' | 'PLVC_verification' | 'PLVC_done';
   createdAt: string;
   updatedAt: string;
-  paymentScreenshot?: string;
-  biDocument?: string;
   
   // Initial Selection
   residentialStatus: 'Indian' | 'NRI';
@@ -81,18 +98,10 @@ interface TermInsuranceVerification {
 
   // Documents
   panNumber: string;
-  panPhoto: string;
   aadharNumber: string;
-  aadharPhoto: string;
-  userPhoto: string;
-  cancelledCheque: string;
-  bankStatement: string;
-  otherDocument: string;
-
-  // Call Recordings
-  plvcVideos?: string[];
-  welcomeCallVideos?: string[];
-  salesCallVideos?: string[];
+  documents: DocumentGroup[];
+  paymentDocuments: DocumentGroup[];
+  verificationDocuments: VerificationDocumentGroup[];
 }
 
 export default function TermInsuranceVerificationPage() {
@@ -103,7 +112,6 @@ export default function TermInsuranceVerificationPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
-  const [editStatus, setEditStatus] = useState<TermInsuranceVerification['status']>('submitted');
   const [newRemark, setNewRemark] = useState('');
   const [paymentScreenshotUploading, setPaymentScreenshotUploading] = useState(false);
   const paymentScreenshotRef = useRef<HTMLInputElement | null>(null);
@@ -115,6 +123,8 @@ export default function TermInsuranceVerificationPage() {
   const salesCallInputRef = useRef<HTMLInputElement | null>(null);
   const [biDocumentUploading, setBiDocumentUploading] = useState(false);
   const biDocumentRef = useRef<HTMLInputElement | null>(null);
+  const [documentUploading, setDocumentUploading] = useState<{[key: string]: boolean}>({});
+  const documentInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -140,7 +150,6 @@ export default function TermInsuranceVerificationPage() {
         const result = await response.json();
         if (result.success && result.data) {
           setVerification(result.data);
-          setEditStatus(result.data.status as TermInsuranceVerification['status'] || 'submitted');
           setEditData(result.data);
         } else {
           throw new Error('Invalid response format');
@@ -166,7 +175,6 @@ export default function TermInsuranceVerificationPage() {
     setIsSaving(true);
     try {
       let payload: any = { ...editData };
-      payload.status = editStatus;
       if (newRemark.trim()) {
         payload.newRemark = {
           text: newRemark.trim(),
@@ -415,6 +423,79 @@ export default function TermInsuranceVerificationPage() {
     }
   };
 
+  const handleDeleteDocument = async (documentType: string, fileIndex: number) => {
+    if (!editData) return;
+    
+    try {
+      const res = await fetch(`/api/leads/${params.id}/term-insurance/delete-document`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentType, fileIndex }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to delete document');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete document');
+    }
+  };
+
+  const handleReuploadDocument = async (e: React.ChangeEvent<HTMLInputElement>, documentType: string, fileIndex: number) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    // Check file type
+    if (!file.type.startsWith('image/') && !file.type.startsWith('application/pdf')) {
+      setError('Please upload only image files (JPG, PNG) or PDF files');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      setError('File size should be less than 10MB');
+      return;
+    }
+    
+    setDocumentUploading(prev => ({ ...prev, [`${documentType}-${fileIndex}`]: true }));
+    setError(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('documentType', documentType);
+      formData.append('fileIndex', fileIndex.toString());
+      
+      const res = await fetch(`/api/leads/${params.id}/term-insurance/reupload-document`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!res.ok) throw new Error('Failed to reupload document');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reupload document');
+    } finally {
+      setDocumentUploading(prev => ({ ...prev, [`${documentType}-${fileIndex}`]: false }));
+      if (documentInputRefs.current[`${documentType}-${fileIndex}`]) {
+        documentInputRefs.current[`${documentType}-${fileIndex}`]!.value = '';
+      }
+    }
+  };
+
+  const handleChangeDocument = (documentType: string, fileIndex: number) => {
+    const key = `${documentType}-${fileIndex}`;
+    if (documentInputRefs.current[key]) {
+      documentInputRefs.current[key]!.click();
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'submitted': return 'bg-yellow-100 text-yellow-800';
@@ -498,9 +579,13 @@ export default function TermInsuranceVerificationPage() {
   };
 
   const renderCallRecordings = () => {
-    if (!verification || currentUser?.role !== 'PLVC_verificator' || verification.status !== 'PLVC_done') {
+    if (!verification || currentUser?.role !== 'PLVC_verificator' || !['PLVC_verification', 'PLVC_done'].includes(verification.status)) {
       return null;
     }
+
+    const plvcFiles = editData?.verificationDocuments?.find(doc => doc.documentType === 'Verification Call')?.files ?? [];
+    const welcomeFiles = editData?.verificationDocuments?.find(doc => doc.documentType === 'Welcome Call')?.files ?? [];
+    const salesFiles = editData?.verificationDocuments?.find(doc => doc.documentType === 'Sales Audio')?.files ?? [];
 
     return (
       <div className="mt-8 border-t pt-8">
@@ -510,15 +595,15 @@ export default function TermInsuranceVerificationPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-md font-medium text-gray-700 mb-4">PLVC Recordings</h3>
             <div className="space-y-4">
-              {editData?.plvcVideos && editData.plvcVideos.length > 0 ? (
+              {plvcFiles.length > 0 ? (
                 <div className="space-y-3">
-                  {editData.plvcVideos.map((video, index) => (
+                  {plvcFiles.map((video, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Recording {index + 1}</span>
+                        <span className="text-sm text-gray-600 truncate pr-2" title={video.fileName}>Recording {index + 1}</span>
                         <button
-                          onClick={() => window.open(video, '_blank')}
-                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => window.open(video.url, '_blank')}
+                          className="text-blue-600 hover:text-blue-800 flex-shrink-0"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -556,15 +641,15 @@ export default function TermInsuranceVerificationPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-md font-medium text-gray-700 mb-4">Welcome Call Recordings</h3>
             <div className="space-y-4">
-              {editData?.welcomeCallVideos && editData.welcomeCallVideos.length > 0 ? (
+              {welcomeFiles.length > 0 ? (
                 <div className="space-y-3">
-                  {editData.welcomeCallVideos.map((video, index) => (
+                  {welcomeFiles.map((video, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Recording {index + 1}</span>
+                        <span className="text-sm text-gray-600 truncate pr-2" title={video.fileName}>Recording {index + 1}</span>
                         <button
-                          onClick={() => window.open(video, '_blank')}
-                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => window.open(video.url, '_blank')}
+                          className="text-blue-600 hover:text-blue-800 flex-shrink-0"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -580,7 +665,7 @@ export default function TermInsuranceVerificationPage() {
               <div className="mt-4">
                 <input
                   type="file"
-                  accept="video/mp4,video/quicktime,audio/mp3,audio/wav,audio/mpeg"
+                  accept="audio/mp3,audio/wav,audio/mpeg"
                   ref={welcomeCallInputRef}
                   onChange={handleWelcomeCallUpload}
                   disabled={welcomeCallUploading}
@@ -602,15 +687,15 @@ export default function TermInsuranceVerificationPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-md font-medium text-gray-700 mb-4">Sales Call Recordings</h3>
             <div className="space-y-4">
-              {editData?.salesCallVideos && editData.salesCallVideos.length > 0 ? (
+              {salesFiles.length > 0 ? (
                 <div className="space-y-3">
-                  {editData.salesCallVideos.map((video, index) => (
+                  {salesFiles.map((video, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Recording {index + 1}</span>
+                        <span className="text-sm text-gray-600 truncate pr-2" title={video.fileName}>Recording {index + 1}</span>
                         <button
-                          onClick={() => window.open(video, '_blank')}
-                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => window.open(video.url, '_blank')}
+                          className="text-blue-600 hover:text-blue-800 flex-shrink-0"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -626,7 +711,7 @@ export default function TermInsuranceVerificationPage() {
               <div className="mt-4">
                 <input
                   type="file"
-                  accept="video/mp4,video/quicktime,audio/mp3,audio/wav,audio/mpeg"
+                  accept="audio/mp3,audio/wav,audio/mpeg"
                   ref={salesCallInputRef}
                   onChange={handleSalesCallUpload}
                   disabled={salesCallUploading}
@@ -681,6 +766,14 @@ export default function TermInsuranceVerificationPage() {
     );
   }
 
+  const paymentScreenshotDoc = editData?.paymentDocuments?.find(d => d.documentType === 'Payment Screenshot')?.files[0];
+  const biDocumentDoc = editData?.paymentDocuments?.find(d => d.documentType === 'BI File')?.files[0];
+
+  const allDocuments = [
+    ...(editData?.documents || []),
+    ...(editData?.paymentDocuments || [])
+  ];
+
   return (
     <div className="p-6">
       <div className="mb-6 flex justify-between items-center">
@@ -710,12 +803,12 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Selected Company', verification.selectedCompany, 'text', 'selectedCompany')}
-                {renderField('Residential Status', verification.residentialStatus, 'text', 'residentialStatus')}
-                {renderField('Nationality', verification.nationality, 'text', 'nationality')}
-                {renderField('Policy For', verification.policyFor, 'text', 'policyFor')}
-                {renderField('Created At', verification.createdAt, 'date', 'createdAt')}
-                {renderField('Last Updated', verification.updatedAt, 'date', 'updatedAt')}
+                {renderField('Selected Company', editData?.selectedCompany, 'text', 'selectedCompany')}
+                {renderField('Residential Status', editData?.residentialStatus, 'text', 'residentialStatus')}
+                {renderField('Nationality', editData?.nationality, 'text', 'nationality')}
+                {renderField('Policy For', editData?.policyFor, 'text', 'policyFor')}
+                {renderField('Created At', editData?.createdAt, 'date', 'createdAt')}
+                {renderField('Last Updated', editData?.updatedAt, 'date', 'updatedAt')}
               </div>
             </div>
 
@@ -723,14 +816,14 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Product Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Product Name', verification.productName, 'text', 'productName')}
-                {renderField('PT', verification.pt, 'text', 'pt')}
-                {renderField('PPT', verification.ppt, 'text', 'ppt')}
-                {renderField('Plan Variant', verification.planVariant, 'text', 'planVariant')}
-                {renderField('Sum Assured', verification.sumAssured, 'text', 'sumAssured')}
-                {renderField('Smoker', verification.isSmoker, 'text', 'isSmoker')}
-                {renderField('Mode of Payment', verification.modeOfPayment, 'text', 'modeOfPayment')}
-                {renderField('Premium Payment Method', verification.premiumPaymentMethod, 'text', 'premiumPaymentMethod')}
+                {renderField('Product Name', editData?.productName, 'text', 'productName')}
+                {renderField('PT', editData?.pt, 'text', 'pt')}
+                {renderField('PPT', editData?.ppt, 'text', 'ppt')}
+                {renderField('Plan Variant', editData?.planVariant, 'text', 'planVariant')}
+                {renderField('Sum Assured', editData?.sumAssured, 'text', 'sumAssured')}
+                {renderField('Smoker', editData?.isSmoker, 'text', 'isSmoker')}
+                {renderField('Mode of Payment', editData?.modeOfPayment, 'text', 'modeOfPayment')}
+                {renderField('Premium Payment Method', editData?.premiumPaymentMethod, 'text', 'premiumPaymentMethod')}
               </div>
             </div>
 
@@ -738,24 +831,24 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Name', verification.name, 'text', 'name')}
-                {renderField('Mobile Number', verification.mobileNo, 'text', 'mobileNo')}
-                {renderField('Alternate Number', verification.alternateNo, 'text', 'alternateNo')}
-                {renderField('Email', verification.email, 'text', 'email')}
-                {renderField('Date of Birth', verification.dateOfBirth, 'date', 'dateOfBirth')}
-                {renderField('Education', verification.education, 'text', 'education')}
-                {renderField('Occupation', verification.occupation, 'text', 'occupation')}
-                {renderField('Organization Name', verification.organizationName, 'text', 'organizationName')}
-                {renderField('Work Belongs To', verification.workBelongsTo, 'text', 'workBelongsTo')}
-                {renderField('Annual Income', verification.annualIncome, 'text', 'annualIncome')}
-                {renderField('Years of Working', verification.yearsOfWorking, 'text', 'yearsOfWorking')}
-                {renderField('Marital Status', verification.maritalStatus, 'text', 'maritalStatus')}
-                {renderField('Place of Birth', verification.placeOfBirth, 'text', 'placeOfBirth')}
+                {renderField('Name', editData?.name, 'text', 'name')}
+                {renderField('Mobile Number', editData?.mobileNo, 'text', 'mobileNo')}
+                {renderField('Alternate Number', editData?.alternateNo, 'text', 'alternateNo')}
+                {renderField('Email', editData?.email, 'text', 'email')}
+                {renderField('Date of Birth', editData?.dateOfBirth, 'date', 'dateOfBirth')}
+                {renderField('Education', editData?.education, 'text', 'education')}
+                {renderField('Occupation', editData?.occupation, 'text', 'occupation')}
+                {renderField('Organization Name', editData?.organizationName, 'text', 'organizationName')}
+                {renderField('Work Belongs To', editData?.workBelongsTo, 'text', 'workBelongsTo')}
+                {renderField('Annual Income', editData?.annualIncome, 'text', 'annualIncome')}
+                {renderField('Years of Working', editData?.yearsOfWorking, 'text', 'yearsOfWorking')}
+                {renderField('Marital Status', editData?.maritalStatus, 'text', 'maritalStatus')}
+                {renderField('Place of Birth', editData?.placeOfBirth, 'text', 'placeOfBirth')}
                 <div className="md:col-span-3">
-                  {renderField('Current Address', verification.currentAddress, 'text', 'currentAddress')}
+                  {renderField('Current Address', editData?.currentAddress, 'text', 'currentAddress')}
                 </div>
                 <div className="md:col-span-3">
-                  {renderField('Permanent Address', verification.permanentAddress, 'text', 'permanentAddress')}
+                  {renderField('Permanent Address', editData?.permanentAddress, 'text', 'permanentAddress')}
                 </div>
               </div>
             </div>
@@ -764,17 +857,17 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Family Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('Father\'s Name', verification.fatherName, 'text', 'fatherName')}
-                {renderField('Father\'s Age', verification.fatherAge, 'text', 'fatherAge')}
-                {renderField('Father\'s Status', verification.fatherStatus, 'text', 'fatherStatus')}
-                {renderField('Mother\'s Name', verification.motherName, 'text', 'motherName')}
-                {renderField('Mother\'s Age', verification.motherAge, 'text', 'motherAge')}
-                {renderField('Mother\'s Status', verification.motherStatus, 'text', 'motherStatus')}
-                {renderField('Spouse\'s Name', verification.spouseName, 'text', 'spouseName')}
-                {renderField('Spouse\'s Age', verification.spouseAge, 'text', 'spouseAge')}
-                {renderField('Nominee Name', verification.nomineeName, 'text', 'nomineeName')}
-                {renderField('Nominee Relation', verification.nomineeRelation, 'text', 'nomineeRelation')}
-                {renderField('Nominee Date of Birth', verification.nomineeDOB, 'date', 'nomineeDOB')}
+                {renderField('Father\'s Name', editData?.fatherName, 'text', 'fatherName')}
+                {renderField('Father\'s Age', editData?.fatherAge, 'text', 'fatherAge')}
+                {renderField('Father\'s Status', editData?.fatherStatus, 'text', 'fatherStatus')}
+                {renderField('Mother\'s Name', editData?.motherName, 'text', 'motherName')}
+                {renderField('Mother\'s Age', editData?.motherAge, 'text', 'motherAge')}
+                {renderField('Mother\'s Status', editData?.motherStatus, 'text', 'motherStatus')}
+                {renderField('Spouse\'s Name', editData?.spouseName, 'text', 'spouseName')}
+                {renderField('Spouse\'s Age', editData?.spouseAge, 'text', 'spouseAge')}
+                {renderField('Nominee Name', editData?.nomineeName, 'text', 'nomineeName')}
+                {renderField('Nominee Relation', editData?.nomineeRelation, 'text', 'nomineeRelation')}
+                {renderField('Nominee Date of Birth', editData?.nomineeDOB, 'date', 'nomineeDOB')}
               </div>
             </div>
 
@@ -782,22 +875,22 @@ export default function TermInsuranceVerificationPage() {
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-4">Life Assured Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderField('LA Proposal', verification.laProposal, 'text', 'laProposal')}
-                {renderField('LA Name', verification.laName, 'text', 'laName')}
-                {renderField('LA Date of Birth', verification.laDob, 'date', 'laDob')}
-                {renderField('Age', verification.age, 'text', 'age')}
-                {renderField('Height (ft)', verification.heightFt, 'text', 'heightFt')}
-                {renderField('Height (inches)', verification.heightIn, 'text', 'heightIn')}
-                {renderField('Weight', verification.weight, 'text', 'weight')}
-                {renderField('Designation', verification.designation, 'text', 'designation')}
-                {renderField('Existing Policy', verification.existingPolicy, 'text', 'existingPolicy')}
-                {renderField('Premium Amount', verification.premiumAmount, 'text', 'premiumAmount')}
+                {renderField('LA Proposal', editData?.laProposal, 'text', 'laProposal')}
+                {renderField('LA Name', editData?.laName, 'text', 'laName')}
+                {renderField('LA Date of Birth', editData?.laDob, 'date', 'laDob')}
+                {renderField('Age', editData?.age, 'text', 'age')}
+                {renderField('Height (ft)', editData?.heightFt, 'text', 'heightFt')}
+                {renderField('Height (inches)', editData?.heightIn, 'text', 'heightIn')}
+                {renderField('Weight', editData?.weight, 'text', 'weight')}
+                {renderField('Designation', editData?.designation, 'text', 'designation')}
+                {renderField('Existing Policy', editData?.existingPolicy, 'text', 'existingPolicy')}
+                {renderField('Premium Amount', editData?.premiumAmount, 'text', 'premiumAmount')}
                 <div className="md:col-span-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">Remarks</label>
                     <div className="space-y-2 max-h-40 overflow-y-auto mb-2 bg-gray-50 rounded p-2 border border-gray-200">
-                      {Array.isArray(verification.remarks) && verification.remarks.length > 0 ? (
-                        verification.remarks.map((remark, idx) => (
+                      {Array.isArray(editData?.remarks) && editData?.remarks.length > 0 ? (
+                        editData?.remarks.map((remark, idx) => (
                           <div key={idx} className="bg-white rounded p-2 text-xs text-gray-700 border border-gray-100">
                             <div className="font-semibold">{remark.user}</div>
                             <div>{remark.text}</div>
@@ -832,19 +925,71 @@ export default function TermInsuranceVerificationPage() {
                 <div>
                   <h3 className="text-md font-medium text-gray-900 mb-3">Document Numbers</h3>
                   <div className="space-y-3">
-                    {renderField('PAN Number', verification.panNumber, 'text', 'panNumber')}
-                    {renderField('Aadhaar Number', verification.aadharNumber, 'text', 'aadharNumber')}
+                    {renderField('PAN Number', editData?.panNumber, 'text', 'panNumber')}
+                    {renderField('Aadhaar Number', editData?.aadharNumber, 'text', 'aadharNumber')}
                   </div>
                 </div>
                 <div>
                   <h3 className="text-md font-medium text-gray-900 mb-3">Uploaded Documents</h3>
                   <div className="space-y-3">
-                    {renderDocumentLink(verification.panPhoto, 'PAN Card')}
-                    {renderDocumentLink(verification.aadharPhoto, 'Aadhaar Card')}
-                    {renderDocumentLink(verification.userPhoto, 'Photo')}
-                    {renderDocumentLink(verification.cancelledCheque, 'Cancelled Cheque')}
-                    {renderDocumentLink(verification.bankStatement, 'Bank Statement')}
-                    {renderDocumentLink(verification.otherDocument, 'Other Document')}
+                    {allDocuments.map(docGroup =>
+                      docGroup.files.map((file, index) => (
+                        <div key={`${docGroup.documentType}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 flex items-center"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              {file.fileName || `${docGroup.documentType} ${docGroup.files.length > 1 ? index + 1 : ''}`.trim()}
+                            </a>
+                          </div>
+                          {canEdit && (
+                            <div className="flex gap-2 ml-4">
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                ref={el => { documentInputRefs.current[`${docGroup.documentType}-${index}`] = el; }}
+                                onChange={e => handleReuploadDocument(e, docGroup.documentType, index)}
+                                disabled={documentUploading[`${docGroup.documentType}-${index}`]}
+                                className="hidden"
+                              />
+                              <button
+                                onClick={() => handleChangeDocument(docGroup.documentType, index)}
+                                disabled={documentUploading[`${docGroup.documentType}-${index}`]}
+                                className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                title="Re-upload"
+                              >
+                                {documentUploading[`${docGroup.documentType}-${index}`] ? (
+                                  'Uploading...'
+                                ) : (
+                                  <>
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Re-upload
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDocument(docGroup.documentType, index)}
+                                className="inline-flex items-center px-2 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50"
+                                title="Delete"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -861,8 +1006,8 @@ export default function TermInsuranceVerificationPage() {
                   <label className="block text-sm font-medium text-gray-500">Status</label>
                   {canEdit ? (
                     <select
-                      value={editStatus}
-                      onChange={e => setEditStatus(e.target.value as TermInsuranceVerification['status'])}
+                      value={editData?.status || ''}
+                      onChange={e => handleFieldChange('status', e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     >
                       <option value="submitted">Submitted</option>
@@ -873,7 +1018,7 @@ export default function TermInsuranceVerificationPage() {
                       <option value="PLVC_done">PLVC Done</option>
                     </select>
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{verification.status}</p>
+                    <p className="mt-1 text-sm text-gray-900">{editData?.status}</p>
                   )}
                 </div>
                 <div>
@@ -882,17 +1027,17 @@ export default function TermInsuranceVerificationPage() {
               </div>
 
               {/* Payment Screenshot and BI Document Upload Section */}
-              {editStatus === 'payment_done' && (
+              {editData?.status === 'payment_done' && (
                 <div className="mt-6 border-t pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Payment Screenshot */}
                     <div>
                       <h3 className="text-lg font-semibold text-blue-900 mb-4">Payment Screenshot</h3>
-                      {verification?.paymentScreenshot ? (
+                      {paymentScreenshotDoc ? (
                         <div className="space-y-4">
                           <div className="bg-gray-50 rounded-lg p-4">
                             <img 
-                              src={verification.paymentScreenshot} 
+                              src={paymentScreenshotDoc.url} 
                               alt="Payment Screenshot"
                               className="max-w-full h-auto rounded-lg shadow-lg"
                             />
@@ -903,7 +1048,7 @@ export default function TermInsuranceVerificationPage() {
                             </p>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => window.open(verification.paymentScreenshot, '_blank')}
+                                onClick={() => window.open(paymentScreenshotDoc.url, '_blank')}
                                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                               >
                                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -960,10 +1105,10 @@ export default function TermInsuranceVerificationPage() {
                     {/* BI Document */}
                     <div>
                       <h3 className="text-lg font-semibold text-blue-900 mb-4">BI Document</h3>
-                      {verification?.biDocument ? (
+                      {biDocumentDoc ? (
                         <div className="space-y-4">
                           <div className="bg-gray-50 rounded-lg p-4">
-                            {verification.biDocument.endsWith('.pdf') ? (
+                            {biDocumentDoc.url.endsWith('.pdf') ? (
                               <div className="aspect-[3/4] bg-white rounded-lg shadow-lg flex items-center justify-center">
                                 <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -971,7 +1116,7 @@ export default function TermInsuranceVerificationPage() {
                               </div>
                             ) : (
                               <img 
-                                src={verification.biDocument} 
+                                src={biDocumentDoc.url} 
                                 alt="BI Document"
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
@@ -983,7 +1128,7 @@ export default function TermInsuranceVerificationPage() {
                             </p>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => window.open(verification.biDocument, '_blank')}
+                                onClick={() => window.open(biDocumentDoc.url, '_blank')}
                                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                               >
                                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
