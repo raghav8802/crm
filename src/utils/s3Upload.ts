@@ -15,17 +15,19 @@ const s3Client = new S3Client({
  * @param file The file to upload.
  * @param leadId The ID of the lead to associate the file with.
  * @param category The category for the upload (e.g., 'docs', 'payment', 'verification').
+ * @param insuranceType The type of insurance (e.g., 'term-insurance', 'life-insurance', 'health-insurance', 'car-insurance').
  * @returns A promise that resolves with the public URL and S3 key of the uploaded file.
  */
 export const uploadFileToS3 = async (
   file: File,
   leadId: string,
-  category: 'docs' | 'payment' | 'verification'
+  category: 'docs' | 'payment' | 'verification',
+  insuranceType: 'term-insurance' | 'life-insurance' | 'health-insurance' | 'car-insurance' = 'term-insurance'
 ) => {
   try {
     const fileExtension = path.extname(file.name);
     const uniqueFileName = `${uuidv4()}${fileExtension}`;
-    const key = `term-insurance/${leadId}/${category}/${uniqueFileName}`;
+    const key = `${insuranceType}/${leadId}/${category}/${uniqueFileName}`;
 
     const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 

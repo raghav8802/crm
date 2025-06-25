@@ -75,7 +75,7 @@ interface FormData {
   premiumAmount: string;
   remarks: string;
 
-  // Step 4 - Documents
+  // Step 4 - Documents (Files will be handled by backend)
   // Proposer Documents
   proposerPanNumber: string;
   proposerPanPhoto: File | null;
@@ -254,6 +254,7 @@ export default function LifeInsurancePage() {
       
       const formDataToSend = new FormData();
       
+      // Add all form fields to FormData
       Object.entries(formData).forEach(([key, value]) => {
         if (value instanceof File) {
           formDataToSend.append(key, value);

@@ -73,40 +73,58 @@ export interface ILifeInsuranceVerification extends Document {
   premiumAmount: string;
   remarks: string;
 
-  // Documents
-  // Proposer Documents
-  proposerPanNumber: string;
-  proposerPanPhoto: string; // URL or path to stored file
-  proposerAadharNumber: string;
-  proposerAadharPhoto: string; // URL or path to stored file
-  proposerPhoto: string; // URL or path to stored file
-  proposerCancelledCheque: string; // URL or path to stored file
-  proposerBankStatement: string; // URL or path to stored file
-  proposerOtherDocument: string; // URL or path to stored file
+  // New Document Structure
+  documents: {
+    proposerDocuments: Array<{
+      documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
+      files: Array<{
+        url: string;
+        fileName: string;
+      }>;
+    }>;
+    laDocuments: Array<{
+      documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
+      files: Array<{
+        url: string;
+        fileName: string;
+      }>;
+    }>;
+  };
+  paymentDocuments: Array<{
+    documentType: 'Payment Screenshot' | 'BI File';
+    files: Array<{
+      url: string;
+      fileName: string;
+    }>;
+  }>;
+  verificationDocuments: Array<{
+    documentType: 'Sales Audio' | 'Verification Call' | 'Welcome Call';
+    files: Array<{
+      fileType: 'audio' | 'video';
+      url: string;
+      fileName: string;
+    }>;
+  }>;
 
-  // LA Documents
-  laPanNumber: string;
-  laPanPhoto: string; // URL or path to stored file
-  laAadharNumber: string;
-  laAadharPhoto: string; // URL or path to stored file
-  laPhoto: string; // URL or path to stored file
-  laCancelledCheque: string; // URL or path to stored file
-  laBankStatement: string; // URL or path to stored file
-  laOtherDocument: string; // URL or path to stored file
-
-  // PLVC Video
-  plvcVideo?: string;
-
-  // Payment Screenshot
-  paymentScreenshot?: string;
-
-  // BI Document
-  biDocument: string;
+  // For search/filter
+  panNumber: string;
+  aadharNumber: string;
 
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
 }
+
+const fileSchema = new Schema({
+  url: { type: String, required: true },
+  fileName: { type: String, required: true }
+}, { _id: false });
+
+const verificationFileSchema = new Schema({
+  fileType: { type: String, enum: ['audio', 'video'], required: true },
+  url: { type: String, required: true },
+  fileName: { type: String, required: true }
+}, { _id: false });
 
 const LifeInsuranceVerificationSchema = new Schema({
   leadId: {
@@ -229,35 +247,37 @@ const LifeInsuranceVerificationSchema = new Schema({
   premiumAmount: String,
   remarks: String,
 
-  // Documents
-  // Proposer Documents
-  proposerPanNumber: String,
-  proposerPanPhoto: String,
-  proposerAadharNumber: String,
-  proposerAadharPhoto: String,
-  proposerPhoto: String,
-  proposerCancelledCheque: String,
-  proposerBankStatement: String,
-  proposerOtherDocument: String,
+  // New Document Structure
+  documents: {
+    proposerDocuments: [
+      {
+        documentType: { type: String, enum: ['PAN', 'Aadhaar', 'Photo', 'Cancelled Cheque', 'Bank Statement', 'Other'], required: true },
+        files: [fileSchema]
+      }
+    ],
+    laDocuments: [
+      {
+        documentType: { type: String, enum: ['PAN', 'Aadhaar', 'Photo', 'Cancelled Cheque', 'Bank Statement', 'Other'], required: true },
+        files: [fileSchema]
+      }
+    ]
+  },
+  paymentDocuments: [
+    {
+      documentType: { type: String, enum: ['Payment Screenshot', 'BI File'], required: true },
+      files: [fileSchema]
+    }
+  ],
+  verificationDocuments: [
+    {
+      documentType: { type: String, enum: ['Sales Audio', 'Verification Call', 'Welcome Call'], required: true },
+      files: [verificationFileSchema]
+    }
+  ],
 
-  // LA Documents
-  laPanNumber: String,
-  laPanPhoto: String,
-  laAadharNumber: String,
-  laAadharPhoto: String,
-  laPhoto: String,
-  laCancelledCheque: String,
-  laBankStatement: String,
-  laOtherDocument: String,
-
-  // PLVC Video
-  plvcVideo: String,
-
-  // Payment Screenshot
-  paymentScreenshot: String,
-
-  // BI Document
-  biDocument: String
+  // For search/filter
+  panNumber: String,
+  aadharNumber: String,
 }, {
   timestamps: true
 });

@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import LifeInsuranceVerification from '@/models/LifeInsuranceVerification';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToS3 } from '@/utils/s3Upload';
+
+const proposerDocTypes = [
+  { field: 'proposerPanPhoto', documentType: 'PAN' },
+  { field: 'proposerAadharPhoto', documentType: 'Aadhaar' },
+  { field: 'proposerPhoto', documentType: 'Photo' },
+  { field: 'proposerCancelledCheque', documentType: 'Cancelled Cheque' },
+  { field: 'proposerBankStatement', documentType: 'Bank Statement' },
+  { field: 'proposerOtherDocument', documentType: 'Other' },
+];
+const laDocTypes = [
+  { field: 'laPanPhoto', documentType: 'PAN' },
+  { field: 'laAadharPhoto', documentType: 'Aadhaar' },
+  { field: 'laPhoto', documentType: 'Photo' },
+  { field: 'laCancelledCheque', documentType: 'Cancelled Cheque' },
+  { field: 'laBankStatement', documentType: 'Bank Statement' },
+  { field: 'laOtherDocument', documentType: 'Other' },
+];
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -9,40 +26,59 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const leadId = params.id;
     const formData = await req.formData();
 
-    // Handle file uploads
-    const fileFields = [
-      'proposerPanPhoto',
-      'proposerAadharPhoto',
-      'proposerPhoto',
-      'proposerCancelledCheque',
-      'proposerBankStatement',
-      'proposerOtherDocument',
-      'laPanPhoto',
-      'laAadharPhoto',
-      'laPhoto',
-      'laCancelledCheque',
-      'laBankStatement',
-      'laOtherDocument'
-    ];
+    // Prepare document arrays
+    const proposerDocuments: any[] = [];
+    const laDocuments: any[] = [];
+    const paymentDocuments: any[] = [];
+    const verificationDocuments: any[] = [];
 
-    const verificationData: Record<string, any> = {
-      leadId,
-      status: 'submitted',
-      insuranceType: 'life_insurance'
+    // Helper to add file to doc array
+    const addFileToDocArray = async (arr: any[], documentType: string, file: File, leadId: string, category: 'docs' | 'payment' | 'verification') => {
+      const { url, originalFileName } = await uploadFileToS3(file, leadId, category, 'life-insurance');
+      let docGroup = arr.find((d: any) => d.documentType === documentType);
+      if (!docGroup) {
+        docGroup = { documentType, files: [] };
+        arr.push(docGroup);
+      }
+      docGroup.files.push({ url, fileName: originalFileName });
     };
 
-    // Process file uploads
-    for (const field of fileFields) {
+    // Proposer Documents
+    for (const { field, documentType } of proposerDocTypes) {
       const file = formData.get(field) as File;
       if (file) {
-        const filePath = await uploadFile(file, leadId, 'life-insurance');
-        verificationData[field] = filePath;
+        await addFileToDocArray(proposerDocuments, documentType, file, leadId, 'docs');
+      }
+    }
+    // LA Documents
+    for (const { field, documentType } of laDocTypes) {
+      const file = formData.get(field) as File;
+      if (file) {
+        await addFileToDocArray(laDocuments, documentType, file, leadId, 'docs');
       }
     }
 
-    // Process other form fields
+    // Payment and verification docs can be handled in their own endpoints, but you can add logic here if needed
+
+    // Collect other fields
+    const verificationData: Record<string, any> = {
+      leadId,
+      status: 'submitted',
+      insuranceType: 'life_insurance',
+      documents: {
+        proposerDocuments,
+        laDocuments,
+      },
+      paymentDocuments,
+      verificationDocuments,
+    };
+
+    // Add all other non-file fields
     for (const [key, value] of formData.entries()) {
-      if (!fileFields.includes(key)) {
+      if (
+        !proposerDocTypes.some((d) => d.field === key) &&
+        !laDocTypes.some((d) => d.field === key)
+      ) {
         verificationData[key] = value;
       }
     }

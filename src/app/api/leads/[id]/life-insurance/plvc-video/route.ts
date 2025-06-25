@@ -1,76 +1,111 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/db';
-import { uploadFile } from '@/utils/fileUpload';
+import connectDB from '@/lib/db';
 import LifeInsuranceVerification from '@/models/LifeInsuranceVerification';
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    await connectDB();
+    const leadId = params.id;
     const formData = await request.formData();
+    
     const file = formData.get('media') as File;
+    const type = formData.get('type') as 'plvc' | 'welcome' | 'sales';
 
     if (!file) {
       return NextResponse.json(
-        { success: false, message: 'No file uploaded' },
+        { error: 'No file provided' },
         { status: 400 }
       );
     }
 
-    // Validate file type
+    // Check file type - allow video and audio files
     const isVideo = file.type.startsWith('video/');
     const isAudio = file.type.startsWith('audio/');
     
     if (!isVideo && !isAudio) {
       return NextResponse.json(
-        { success: false, message: 'Only video and audio files are allowed' },
+        { error: 'Please upload only MP4, MOV video files or MP3, WAV audio files' },
         { status: 400 }
       );
     }
 
-    // Validate file size (100MB limit)
+    // Check file size (100MB limit for video/audio files)
     if (file.size > 100 * 1024 * 1024) {
       return NextResponse.json(
-        { success: false, message: 'File size should be less than 100MB' },
+        { error: 'File size should be less than 100MB' },
         { status: 400 }
       );
     }
 
-    // Upload file
-    const filePath = await uploadFile(file, params.id, 'life-insurance');
-
-    // Update database
-    await connectToDatabase();
-    const result = await LifeInsuranceVerification.findOneAndUpdate(
-      { leadId: params.id },
-      { $set: { plvcVideo: filePath } },
-      { new: true }
-    );
-
-    if (!result) {
+    // Find the verification record
+    const verification = await LifeInsuranceVerification.findOne({ leadId });
+    if (!verification) {
       return NextResponse.json(
-        { success: false, message: 'Verification record not found' },
+        { error: 'Verification not found' },
         { status: 404 }
       );
     }
 
+    // Upload file to S3
+    const category = 'verification';
+    const { url, originalFileName } = await uploadFileToS3(file, leadId, category, 'life-insurance');
+
+    // Initialize verificationDocuments array if it doesn't exist
+    if (!verification.verificationDocuments) {
+      verification.verificationDocuments = [];
+    }
+
+    // Map type to document type
+    const documentTypeMap = {
+      'plvc': 'Verification Call',
+      'welcome': 'Welcome Call',
+      'sales': 'Sales Audio'
+    };
+
+    const documentType = documentTypeMap[type];
+    const fileType = isVideo ? 'video' : 'audio';
+
+    // Find existing document group
+    let documentGroup = verification.verificationDocuments.find((doc: any) => doc.documentType === documentType);
+
+    if (documentGroup) {
+      // If group exists, add the new file to its files array
+      documentGroup.files.push({
+        fileType: fileType,
+        url: url,
+        fileName: originalFileName,
+      });
+    } else {
+      // If group doesn't exist, create and push it with the file
+      verification.verificationDocuments.push({
+        documentType: documentType,
+        files: [{
+          fileType: fileType,
+          url: url,
+          fileName: originalFileName,
+        }]
+      });
+    }
+
+    // Mark as modified to ensure save
+    verification.markModified('verificationDocuments');
+
+    // Save the updated verification
+    await verification.save();
+
     return NextResponse.json({
       success: true,
-      message: 'File uploaded successfully',
-      data: result
+      data: verification
     });
 
   } catch (error) {
     console.error('Error uploading file:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to upload file' },
+      { error: 'Failed to upload file' },
       { status: 500 }
     );
   }
