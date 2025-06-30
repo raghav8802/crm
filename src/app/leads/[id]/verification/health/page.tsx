@@ -18,7 +18,6 @@ interface InsuredPerson {
   height: string;
   weight: string;
   aadharNumber: string;
-  aadharPhoto: string;
   medicalHistory: string;
   preExistingDisease: string;
   bpDiabetes: string;
@@ -29,7 +28,6 @@ interface InsuredPerson {
   drinking: 'Yes' | 'No';
   smoking: 'Yes' | 'No';
   chewing: 'Yes' | 'No';
-  medicalDocuments: string[];
 }
 
 interface HealthInsuranceVerification {
@@ -61,7 +59,6 @@ interface HealthInsuranceVerification {
   proposerAddress: string;
   proposerAnnualIncome: string;
   proposerPanNumber: string;
-  proposerPanImage: string;
   proposerHeight: string;
   proposerWeight: string;
 
@@ -75,16 +72,47 @@ interface HealthInsuranceVerification {
 
   remarks?: Remark[];
 
-  // Call Recordings
-  plvcVideos?: string[];
-  welcomeCallVideos?: string[];
-  salesCallVideos?: string[];
+  // NEW STRUCTURED DOCUMENT MANAGEMENT
+  documents: {
+    proposerDocuments: Array<{
+      documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
+      files: Array<{
+        url: string;
+        fileName: string;
+      }>;
+    }>;
+    insuredPersonsDocuments: Array<{
+      personIndex: number;
+      documents: Array<{
+        documentType: 'Aadhaar' | 'Medical Documents';
+        files: Array<{
+          url: string;
+          fileName: string;
+        }>;
+      }>;
+    }>;
+  };
 
-  // Payment Screenshot
-  paymentScreenshot?: string;
+  paymentDocuments: Array<{
+    documentType: 'Payment Screenshot' | 'BI File';
+    files: Array<{
+      url: string;
+      fileName: string;
+    }>;
+  }>;
 
-  // BI Document
-  biDocument?: string;
+  verificationDocuments: Array<{
+    documentType: 'Sales Audio' | 'Verification Call' | 'Welcome Call';
+    files: Array<{
+      fileType: 'audio' | 'video';
+      url: string;
+      fileName: string;
+    }>;
+  }>;
+
+  // For search/filter
+  panNumber: string;
+  aadharNumber: string;
 }
 
 export default function HealthInsuranceVerificationPage() {
@@ -304,6 +332,17 @@ export default function HealthInsuranceVerificationPage() {
     );
   };
 
+  // Helper function to get documents by type
+  const getDocumentsByType = (documents: any[], documentType: string) => {
+    return documents?.find(doc => doc.documentType === documentType)?.files || [];
+  };
+
+  // Helper function to get insured person documents
+  const getInsuredPersonDocuments = (personIndex: number, documentType: string) => {
+    const personDocs = editData?.documents?.insuredPersonsDocuments?.find(doc => doc.personIndex === personIndex);
+    return personDocs?.documents?.find(doc => doc.documentType === documentType)?.files || [];
+  };
+
   // Video/Audio upload handler (with validation)
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -366,7 +405,8 @@ export default function HealthInsuranceVerificationPage() {
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('screenshot', file);
+      formData.append('file', file);
+      formData.append('documentType', 'Payment Screenshot');
       const res = await fetch(`/api/leads/${params.id}/health-insurance/payment-screenshot`, {
         method: 'POST',
         body: formData,
@@ -410,9 +450,9 @@ export default function HealthInsuranceVerificationPage() {
         }
         formData.append('files', file);
       }
-      formData.append('type', 'plvc');
+      formData.append('documentType', 'Verification Call');
 
-      const response = await fetch(`/api/leads/${params.id}/health-insurance/plvc`, {
+      const response = await fetch(`/api/leads/${params.id}/health-insurance/plvc-video`, {
         method: 'POST',
         body: formData,
       });
@@ -422,14 +462,15 @@ export default function HealthInsuranceVerificationPage() {
       }
 
       const data = await response.json();
-      setEditData(prev => ({
-        ...prev,
-        plvcVideos: [...(prev.plvcVideos || []), ...data.urls]
-      }));
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload files');
     } finally {
       setPlvcUploading(false);
+      if (plvcInputRef.current) plvcInputRef.current.value = '';
     }
   };
 
@@ -452,9 +493,9 @@ export default function HealthInsuranceVerificationPage() {
         }
         formData.append('files', file);
       }
-      formData.append('type', 'welcome');
+      formData.append('documentType', 'Welcome Call');
 
-      const response = await fetch(`/api/leads/${params.id}/health-insurance/plvc`, {
+      const response = await fetch(`/api/leads/${params.id}/health-insurance/plvc-video`, {
         method: 'POST',
         body: formData,
       });
@@ -464,14 +505,15 @@ export default function HealthInsuranceVerificationPage() {
       }
 
       const data = await response.json();
-      setEditData(prev => ({
-        ...prev,
-        welcomeCallVideos: [...(prev.welcomeCallVideos || []), ...data.urls]
-      }));
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload files');
     } finally {
       setWelcomeCallUploading(false);
+      if (welcomeCallInputRef.current) welcomeCallInputRef.current.value = '';
     }
   };
 
@@ -494,9 +536,9 @@ export default function HealthInsuranceVerificationPage() {
         }
         formData.append('files', file);
       }
-      formData.append('type', 'sales');
+      formData.append('documentType', 'Sales Audio');
 
-      const response = await fetch(`/api/leads/${params.id}/health-insurance/plvc`, {
+      const response = await fetch(`/api/leads/${params.id}/health-insurance/plvc-video`, {
         method: 'POST',
         body: formData,
       });
@@ -506,14 +548,15 @@ export default function HealthInsuranceVerificationPage() {
       }
 
       const data = await response.json();
-      setEditData(prev => ({
-        ...prev,
-        salesCallVideos: [...(prev.salesCallVideos || []), ...data.urls]
-      }));
+      if (data.success && data.data) {
+        setVerification(data.data);
+        setEditData(data.data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload files');
     } finally {
       setSalesCallUploading(false);
+      if (salesCallInputRef.current) salesCallInputRef.current.value = '';
     }
   };
 
@@ -537,7 +580,8 @@ export default function HealthInsuranceVerificationPage() {
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('document', file);
+      formData.append('file', file);
+      formData.append('documentType', 'BI File');
       const res = await fetch(`/api/leads/${params.id}/health-insurance/bi-document`, {
         method: 'POST',
         body: formData,
@@ -567,6 +611,11 @@ export default function HealthInsuranceVerificationPage() {
       return null;
     }
 
+    // Helper function to get verification documents by type
+    const getVerificationDocuments = (documentType: string) => {
+      return editData?.verificationDocuments?.find(doc => doc.documentType === documentType)?.files || [];
+    };
+
     return (
       <div className="mt-8 border-t pt-8">
         <h2 className="text-lg font-semibold text-blue-900 mb-6">Call Recordings</h2>
@@ -575,14 +624,14 @@ export default function HealthInsuranceVerificationPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-md font-medium text-gray-700 mb-4">PLVC Recordings</h3>
             <div className="space-y-4">
-              {editData?.plvcVideos && editData.plvcVideos.length > 0 ? (
+              {getVerificationDocuments('Verification Call').length > 0 ? (
                 <div className="space-y-3">
-                  {editData.plvcVideos.map((video, index) => (
+                  {getVerificationDocuments('Verification Call').map((file: any, index: number) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Recording {index + 1}</span>
                         <button
-                          onClick={() => window.open(video, '_blank')}
+                          onClick={() => window.open(file.url, '_blank')}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -621,14 +670,14 @@ export default function HealthInsuranceVerificationPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-md font-medium text-gray-700 mb-4">Welcome Call Recordings</h3>
             <div className="space-y-4">
-              {editData?.welcomeCallVideos && editData.welcomeCallVideos.length > 0 ? (
+              {getVerificationDocuments('Welcome Call').length > 0 ? (
                 <div className="space-y-3">
-                  {editData.welcomeCallVideos.map((video, index) => (
+                  {getVerificationDocuments('Welcome Call').map((file: any, index: number) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Recording {index + 1}</span>
                         <button
-                          onClick={() => window.open(video, '_blank')}
+                          onClick={() => window.open(file.url, '_blank')}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -667,14 +716,14 @@ export default function HealthInsuranceVerificationPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="text-md font-medium text-gray-700 mb-4">Sales Call Recordings</h3>
             <div className="space-y-4">
-              {editData?.salesCallVideos && editData.salesCallVideos.length > 0 ? (
+              {getVerificationDocuments('Sales Audio').length > 0 ? (
                 <div className="space-y-3">
-                  {editData.salesCallVideos.map((video, index) => (
+                  {getVerificationDocuments('Sales Audio').map((file: any, index: number) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Recording {index + 1}</span>
                         <button
-                          onClick={() => window.open(video, '_blank')}
+                          onClick={() => window.open(file.url, '_blank')}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -800,7 +849,11 @@ export default function HealthInsuranceVerificationPage() {
               {renderField('Height', editData?.proposerHeight, 'text', 'proposerHeight')}
               {renderField('Weight', editData?.proposerWeight, 'text', 'proposerWeight')}
               {renderField('PAN Number', editData?.proposerPanNumber, 'text', 'proposerPanNumber')}
-              {renderDocumentLink(editData?.proposerPanImage, 'PAN Card')}
+              {getDocumentsByType(editData?.documents?.proposerDocuments || [], 'PAN').map((file: any, index: number) => (
+                <div key={index}>
+                  {renderDocumentLink(file.url, `PAN Card ${index + 1}`)}
+                </div>
+              ))}
               <div className="md:col-span-3">
                 {renderField('Address', editData?.proposerAddress, 'text', 'proposerAddress')}
               </div>
@@ -823,7 +876,11 @@ export default function HealthInsuranceVerificationPage() {
                       {renderField('Height', person.height, 'text', `insuredPersons.${idx}.height`)}
                       {renderField('Weight', person.weight, 'text', `insuredPersons.${idx}.weight`)}
                       {renderField('Aadhar Number', person.aadharNumber, 'text', `insuredPersons.${idx}.aadharNumber`)}
-                      {renderDocumentLink(person.aadharPhoto, 'Aadhar Photo')}
+                      {getInsuredPersonDocuments(idx, 'Aadhaar').map((file, index) => (
+                        <div key={index}>
+                          {renderDocumentLink(file.url, `Aadhar Photo ${index + 1}`)}
+                        </div>
+                      ))}
                       {renderField('Medical History', person.medicalHistory, 'text', `insuredPersons.${idx}.medicalHistory`)}
                       {renderField('Pre-existing Disease', person.preExistingDisease, 'text', `insuredPersons.${idx}.preExistingDisease`)}
                       {renderField('BP/Diabetes', person.bpDiabetes, 'text', `insuredPersons.${idx}.bpDiabetes`)}
@@ -837,11 +894,11 @@ export default function HealthInsuranceVerificationPage() {
                     </div>
                     <div className="mt-2">
                       <h4 className="font-medium text-gray-700 mb-1">Medical Documents</h4>
-                      {person.medicalDocuments && person.medicalDocuments.length > 0 ? (
+                      {getInsuredPersonDocuments(idx, 'Medical Documents').length > 0 ? (
                         <ul className="list-disc ml-6">
-                          {person.medicalDocuments.map((doc, docIdx) => (
+                          {getInsuredPersonDocuments(idx, 'Medical Documents').map((file, docIdx) => (
                             <li key={docIdx}>
-                              {renderDocumentLink(doc, `Medical Document ${docIdx + 1}`)}
+                              {renderDocumentLink(file.url, `Medical Document ${docIdx + 1}`)}
                             </li>
                           ))}
                         </ul>
@@ -927,22 +984,24 @@ export default function HealthInsuranceVerificationPage() {
                   {/* Payment Screenshot */}
                   <div>
                     <h3 className="text-lg font-semibold text-blue-900 mb-4">Payment Screenshot</h3>
-                    {verification?.paymentScreenshot ? (
+                    {getDocumentsByType(editData?.paymentDocuments || [], 'Payment Screenshot').length > 0 ? (
                       <div className="space-y-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <img 
-                            src={verification.paymentScreenshot} 
-                            alt="Payment Screenshot"
-                            className="max-w-full h-auto rounded-lg shadow-lg"
-                          />
-                        </div>
+                        {getDocumentsByType(editData?.paymentDocuments || [], 'Payment Screenshot').map((file: any, index: number) => (
+                          <div key={index} className="bg-gray-50 rounded-lg p-4">
+                            <img 
+                              src={file.url} 
+                              alt="Payment Screenshot"
+                              className="max-w-full h-auto rounded-lg shadow-lg"
+                            />
+                          </div>
+                        ))}
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
                             Payment screenshot uploaded successfully
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => window.open(verification.paymentScreenshot, '_blank')}
+                              onClick={() => window.open(getDocumentsByType(editData?.paymentDocuments || [], 'Payment Screenshot')[0]?.url, '_blank')}
                               className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                             >
                               <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -999,30 +1058,32 @@ export default function HealthInsuranceVerificationPage() {
                   {/* BI Document */}
                   <div>
                     <h3 className="text-lg font-semibold text-blue-900 mb-4">BI Document</h3>
-                    {verification?.biDocument ? (
+                    {getDocumentsByType(editData?.paymentDocuments || [], 'BI File').length > 0 ? (
                       <div className="space-y-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          {verification.biDocument.endsWith('.pdf') ? (
-                            <div className="aspect-[3/4] bg-white rounded-lg shadow-lg flex items-center justify-center">
-                              <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          ) : (
-                            <img 
-                              src={verification.biDocument} 
-                              alt="BI Document"
-                              className="max-w-full h-auto rounded-lg shadow-lg"
-                            />
-                          )}
-                        </div>
+                        {getDocumentsByType(editData?.paymentDocuments || [], 'BI File').map((file: any, index: number) => (
+                          <div key={index} className="bg-gray-50 rounded-lg p-4">
+                            {file.url.endsWith('.pdf') ? (
+                              <div className="aspect-[3/4] bg-white rounded-lg shadow-lg flex items-center justify-center">
+                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <img 
+                                src={file.url} 
+                                alt="BI Document"
+                                className="max-w-full h-auto rounded-lg shadow-lg"
+                              />
+                            )}
+                          </div>
+                        ))}
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
                             BI document uploaded successfully
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => window.open(verification.biDocument, '_blank')}
+                              onClick={() => window.open(getDocumentsByType(editData?.paymentDocuments || [], 'BI File')[0]?.url, '_blank')}
                               className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                             >
                               <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

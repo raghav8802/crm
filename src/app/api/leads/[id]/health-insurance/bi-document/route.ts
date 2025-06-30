@@ -12,7 +12,7 @@ export async function POST(
     const leadId = params.id;
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const documentType = formData.get('documentType') as string || 'Payment Screenshot';
+    const documentType = formData.get('documentType') as string || 'BI File';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -33,19 +33,19 @@ export async function POST(
       verification.paymentDocuments = [];
     }
 
-    // Find existing Payment Screenshot document or create new one
-    let paymentScreenshot = verification.paymentDocuments.find((doc: any) => doc.documentType === 'Payment Screenshot');
+    // Find existing BI File document or create new one
+    let biDocument = verification.paymentDocuments.find((doc: any) => doc.documentType === 'BI File');
     
-    if (paymentScreenshot) {
-      // Update existing Payment Screenshot document
-      paymentScreenshot.files.push({
+    if (biDocument) {
+      // Update existing BI File document
+      biDocument.files.push({
         url,
         fileName: originalFileName
       });
     } else {
-      // Create new Payment Screenshot document
+      // Create new BI File document
       verification.paymentDocuments.push({
-        documentType: 'Payment Screenshot',
+        documentType: 'BI File',
         files: [{
           url,
           fileName: originalFileName
@@ -63,43 +63,13 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: verification,
-      message: 'Payment screenshot uploaded successfully'
+      message: 'BI document uploaded successfully'
     });
 
   } catch (error) {
-    console.error('Error uploading payment screenshot:', error);
+    console.error('Error uploading BI document:', error);
     return NextResponse.json(
-      { error: 'Failed to upload payment screenshot' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await connectDB();
-    const leadId = params.id;
-
-    const verification = await HealthInsuranceVerification.findOne({ leadId });
-    if (!verification) {
-      return NextResponse.json(
-        { error: 'Health insurance verification not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      paymentDocuments: verification.paymentDocuments || []
-    });
-
-  } catch (error) {
-    console.error('Error fetching payment documents:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch payment documents' },
+      { error: 'Failed to upload BI document' },
       { status: 500 }
     );
   }

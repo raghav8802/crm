@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IHealthInsuranceVerification extends Document {
   leadId: mongoose.Types.ObjectId;
   status: 'submitted' | 'processing' | 'link_created' | 'payment_done' | 'PLVC_verification' | 'PLVC_done';
-  insuranceType: string;
+  insuranceType: 'health_insurance';
   
   // Company Selection
   selectedCompany: string;
@@ -26,7 +26,6 @@ export interface IHealthInsuranceVerification extends Document {
   proposerAddress: string;
   proposerAnnualIncome: string;
   proposerPanNumber: string;
-  proposerPanImage: string;
   proposerHeight: string;
   proposerWeight: string;
 
@@ -39,7 +38,6 @@ export interface IHealthInsuranceVerification extends Document {
     height: string;
     weight: string;
     aadharNumber: string;
-    aadharPhoto: string;
     medicalHistory: string;
     preExistingDisease: string;
     bpDiabetes: string;
@@ -50,7 +48,6 @@ export interface IHealthInsuranceVerification extends Document {
     drinking: 'Yes' | 'No';
     smoking: 'Yes' | 'No';
     chewing: 'Yes' | 'No';
-    medicalDocuments: string[];
   }>;
 
   // Nominee Details
@@ -65,24 +62,79 @@ export interface IHealthInsuranceVerification extends Document {
     timestamp: Date;
   }>;
 
-  // PLVC Verification Video
-  plvcVideo?: string;
+  // NEW STRUCTURED DOCUMENT MANAGEMENT
+  documents: {
+    proposerDocuments: Array<{
+      documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
+      files: Array<{
+        url: string;
+        fileName: string;
+      }>;
+    }>;
+    insuredPersonsDocuments: Array<{
+      personIndex: number;
+      documents: Array<{
+        documentType: 'Aadhaar' | 'Medical Documents';
+        files: Array<{
+          url: string;
+          fileName: string;
+        }>;
+      }>;
+    }>;
+  };
 
-  // Payment Screenshot
-  paymentScreenshot?: string;
+  paymentDocuments: Array<{
+    documentType: 'Payment Screenshot' | 'BI File';
+    files: Array<{
+      url: string;
+      fileName: string;
+    }>;
+  }>;
+
+  verificationDocuments: Array<{
+    documentType: 'Sales Audio' | 'Verification Call' | 'Welcome Call';
+    files: Array<{
+      fileType: 'audio' | 'video';
+      url: string;
+      fileName: string;
+    }>;
+  }>;
+
+  // For search/filter
+  panNumber: string;
+  aadharNumber: string;
 
   createdAt: Date;
   updatedAt: Date;
 }
 
+const fileSchema = new Schema({
+  url: { type: String, required: true },
+  fileName: { type: String, required: true }
+}, { _id: false });
+
+const verificationFileSchema = new Schema({
+  fileType: { type: String, enum: ['audio', 'video'], required: true },
+  url: { type: String, required: true },
+  fileName: { type: String, required: true }
+}, { _id: false });
+
 const HealthInsuranceVerificationSchema = new Schema({
-  leadId: { type: Schema.Types.ObjectId, ref: 'Lead' },
+  leadId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Lead',
+    required: true 
+  },
   status: {
     type: String,
     enum: ['submitted', 'processing', 'link_created', 'payment_done', 'PLVC_verification', 'PLVC_done'],
     default: 'submitted'
   },
-  insuranceType: { type: String, default: 'health_insurance' },
+  insuranceType: { 
+    type: String, 
+    enum: ['health_insurance'],
+    default: 'health_insurance' 
+  },
 
   // Company Selection
   selectedCompany: { type: String },
@@ -105,7 +157,6 @@ const HealthInsuranceVerificationSchema = new Schema({
   proposerAddress: { type: String },
   proposerAnnualIncome: { type: String },
   proposerPanNumber: { type: String },
-  proposerPanImage: { type: String },
   proposerHeight: { type: String },
   proposerWeight: { type: String },
 
@@ -118,7 +169,6 @@ const HealthInsuranceVerificationSchema = new Schema({
     height: { type: String },
     weight: { type: String },
     aadharNumber: { type: String },
-    aadharPhoto: { type: String },
     medicalHistory: { type: String },
     preExistingDisease: { type: String },
     bpDiabetes: { type: String },
@@ -128,8 +178,7 @@ const HealthInsuranceVerificationSchema = new Schema({
     medicineDose: { type: String },
     drinking: { type: String, enum: ['Yes', 'No'], default: 'No' },
     smoking: { type: String, enum: ['Yes', 'No'], default: 'No' },
-    chewing: { type: String, enum: ['Yes', 'No'], default: 'No' },
-    medicalDocuments: [{ type: String }]
+    chewing: { type: String, enum: ['Yes', 'No'], default: 'No' }
   }],
 
   // Nominee Details
@@ -144,11 +193,46 @@ const HealthInsuranceVerificationSchema = new Schema({
     timestamp: { type: Date, default: Date.now }
   }],
 
-  // PLVC Verification Video
-  plvcVideo: { type: String },
+  // NEW STRUCTURED DOCUMENT MANAGEMENT
+  documents: {
+    proposerDocuments: [{
+      documentType: { 
+        type: String, 
+        enum: ['PAN', 'Aadhaar', 'Photo', 'Cancelled Cheque', 'Bank Statement', 'Other'] 
+      },
+      files: [fileSchema]
+    }],
+    insuredPersonsDocuments: [{
+      personIndex: { type: Number },
+      documents: [{
+        documentType: { 
+          type: String, 
+          enum: ['Aadhaar', 'Medical Documents'] 
+        },
+        files: [fileSchema]
+      }]
+    }]
+  },
 
-  // Payment Screenshot
-  paymentScreenshot: { type: String }
+  paymentDocuments: [{
+    documentType: { 
+      type: String, 
+      enum: ['Payment Screenshot', 'BI File'] 
+    },
+    files: [fileSchema]
+  }],
+
+  verificationDocuments: [{
+    documentType: { 
+      type: String, 
+      enum: ['Sales Audio', 'Verification Call', 'Welcome Call'] 
+    },
+    files: [verificationFileSchema]
+  }],
+
+  // For search/filter
+  panNumber: { type: String },
+  aadharNumber: { type: String }
 }, {
   timestamps: true
 });

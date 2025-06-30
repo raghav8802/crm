@@ -1,54 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import HealthInsuranceVerification from '@/models/HealthInsuranceVerification';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToS3 } from '@/utils/s3Upload';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     await connectDB();
     const leadId = params.id;
-    const formData = await req.formData();
-    const file = formData.get('media') as File;
+    const formData = await request.formData();
+    const files = formData.getAll('files') as File[];
+    const documentType = formData.get('documentType') as string || 'Verification Call';
+
+    if (!files || files.length === 0) {
+      return NextResponse.json({ error: 'No files provided' }, { status: 400 });
+    }
+
+    // Validate all files
+    for (const file of files) {
+      if (!file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+        return NextResponse.json({ error: 'Only video and audio files are allowed' }, { status: 400 });
+      }
+      if (file.size > 100 * 1024 * 1024) { // 100MB limit
+        return NextResponse.json({ error: 'File size should be less than 100MB' }, { status: 400 });
+      }
+    }
+
+    // Upload all files to S3
+    const uploadPromises = files.map(async (file) => {
+      const { url, originalFileName } = await uploadFileToS3(file, leadId, 'verification', 'health-insurance');
+      return {
+        fileType: file.type.startsWith('video/') ? 'video' : 'audio',
+        url,
+        fileName: originalFileName
+      };
+    });
+
+    const uploadedFiles = await Promise.all(uploadPromises);
+
+    // Find existing verification record
+    let verification = await HealthInsuranceVerification.findOne({ leadId });
     
-    if (!file) {
-      return NextResponse.json({ error: 'No media file provided' }, { status: 400 });
-    }
-
-    // Validate file type
-    const isVideo = file.type.startsWith('video/');
-    const isAudio = file.type.startsWith('audio/');
-    
-    if (!isVideo && !isAudio) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Only video (MP4, MOV) and audio (MP3, WAV) files are allowed' },
-        { status: 400 }
-      );
-    }
-
-    // Validate file size (100MB limit)
-    if (file.size > 100 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'File size exceeds 100MB limit' },
-        { status: 400 }
-      );
-    }
-
-    const filePath = await uploadFile(file, leadId, 'health-insurance/plvc-media');
-    const verification = await HealthInsuranceVerification.findOneAndUpdate(
-      { leadId },
-      { $set: { plvcVideo: filePath } },
-      { new: true }
-    );
-
     if (!verification) {
-      return NextResponse.json({ error: 'Verification not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Verification record not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: verification });
+    // Initialize verificationDocuments array if it doesn't exist
+    if (!verification.verificationDocuments) {
+      verification.verificationDocuments = [];
+    }
+
+    // Find existing document of the same type or create new one
+    let existingDocument = verification.verificationDocuments.find((doc: any) => doc.documentType === documentType);
+    
+    if (existingDocument) {
+      // Add new files to existing document
+      existingDocument.files.push(...uploadedFiles);
+    } else {
+      // Create new document
+      verification.verificationDocuments.push({
+        documentType: documentType as 'Sales Audio' | 'Verification Call' | 'Welcome Call',
+        files: uploadedFiles
+      });
+    }
+
+    // Update status to PLVC_verification if not already
+    if (verification.status === 'payment_done') {
+      verification.status = 'PLVC_verification';
+    }
+
+    await verification.save();
+
+    return NextResponse.json({
+      success: true,
+      data: verification,
+      message: `${documentType} files uploaded successfully`
+    });
+
   } catch (error) {
-    console.error('Error uploading PLVC media:', error);
+    console.error('Error uploading verification files:', error);
     return NextResponse.json(
-      { error: 'Failed to upload media file' },
+      { error: 'Failed to upload verification files' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectDB();
+    const leadId = params.id;
+
+    const verification = await HealthInsuranceVerification.findOne({ leadId });
+    if (!verification) {
+      return NextResponse.json(
+        { error: 'Health insurance verification not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      verificationDocuments: verification.verificationDocuments || []
+    });
+
+  } catch (error) {
+    console.error('Error fetching verification documents:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch verification documents' },
       { status: 500 }
     );
   }

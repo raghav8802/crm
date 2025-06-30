@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(
   request: NextRequest,
@@ -11,12 +11,19 @@ export async function POST(
     const leadId = params.id;
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const category = formData.get('category') as string || 'docs';
+    
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
-    // Save the file in a folder named after the leadId
-    const filePath = await uploadFile(file, leadId, `health-insurance/${leadId}`);
-    return NextResponse.json({ success: true, fileUrl: filePath });
+
+    const { url, originalFileName } = await uploadFileToS3(file, leadId, category as any, 'health-insurance');
+    
+    return NextResponse.json({ 
+      success: true, 
+      fileUrl: url,
+      fileName: originalFileName
+    });
   } catch (error) {
     console.error('Error uploading health insurance file:', error);
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });

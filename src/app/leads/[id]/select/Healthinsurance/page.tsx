@@ -14,7 +14,7 @@ interface InsuredPerson {
   height: string;
   weight: string;
   aadharNumber: string;
-  aadharPhoto: string | null;
+  aadharPhoto: string | File | null;
   medicalHistory: string;
   preExistingDisease: string;
   bpDiabetes: string;
@@ -25,7 +25,7 @@ interface InsuredPerson {
   drinking: 'Yes' | 'No';
   smoking: 'Yes' | 'No';
   chewing: 'Yes' | 'No';
-  medicalDocuments: string[];
+  medicalDocuments: (string | File)[];
 }
 
 interface FormData {
@@ -111,9 +111,10 @@ interface FormData {
 }
 
 // Helper function to upload a file and return the path
-async function uploadHealthFile(file: File, leadId: string) {
+async function uploadHealthFile(file: File, leadId: string, category: 'docs' | 'payment' | 'verification' = 'docs') {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('category', category);
   const res = await fetch(`/api/leads/${leadId}/health-insurance/upload`, {
     method: 'POST',
     body: formData,
@@ -292,19 +293,62 @@ export default function VerificationPage() {
     try {
       setError('');
       
-      // Create FormData object
+      // Create FormData object for structured submission
       const formDataToSend = new FormData();
       
-      // Add all form fields
+      // Add basic form fields (excluding files and insured persons)
       Object.entries(formData).forEach(([key, value]) => {
-        if (value instanceof File) {
-          formDataToSend.append(key, value);
-        } else if (Array.isArray(value)) {
-          formDataToSend.append(key, JSON.stringify(value));
-        } else if (value !== null && value !== undefined) {
-          formDataToSend.append(key, value.toString());
+        if (key !== 'insuredPersons' && key !== 'proposerPanImage' && value !== null && value !== undefined) {
+          if (value instanceof File) {
+            // Handle proposer file uploads
+            const documentType = key.replace('proposer', '').replace('Image', '').replace('Photo', '').replace('CancelledCheque', 'Cancelled Cheque').replace('BankStatement', 'Bank Statement');
+            formDataToSend.append(`proposer_${documentType.toLowerCase().replace(' ', '_')}`, value);
+          } else if (Array.isArray(value)) {
+            formDataToSend.append(key, JSON.stringify(value));
+          } else {
+            formDataToSend.append(key, value.toString());
+          }
         }
       });
+
+      // Handle proposer file uploads
+      if (formData.proposerPanImage instanceof File) {
+        formDataToSend.append('proposer_pan', formData.proposerPanImage);
+      }
+
+      // Handle insured persons data and file uploads
+      const processedInsuredPersons = await Promise.all(
+        formData.insuredPersons.map(async (person, index) => {
+          const processedPerson = { ...person };
+          
+          // Handle aadhar photo for each person
+          if (person.aadharPhoto && person.aadharPhoto instanceof File) {
+            const fileUrl = await uploadHealthFile(person.aadharPhoto, id as string, 'docs');
+            processedPerson.aadharPhoto = fileUrl;
+            formDataToSend.append(`insuredPerson_${index}_aadhar`, person.aadharPhoto);
+          }
+
+          // Handle medical documents for each person
+          if (person.medicalDocuments && person.medicalDocuments.length > 0) {
+            const fileUrls: string[] = [];
+            for (const doc of person.medicalDocuments) {
+              if (doc instanceof File) {
+                const fileUrl = await uploadHealthFile(doc, id as string, 'docs');
+                fileUrls.push(fileUrl);
+                formDataToSend.append(`insuredPerson_${index}_medical`, doc);
+              } else if (typeof doc === 'string') {
+                fileUrls.push(doc);
+              }
+            }
+            processedPerson.medicalDocuments = fileUrls;
+          }
+
+          return processedPerson;
+        })
+      );
+
+      // Update the insured persons data in formDataToSend
+      formDataToSend.append('insuredPersons', JSON.stringify(processedInsuredPersons));
 
       const response = await fetch(`/api/leads/${id}/health-insurance`, {
         method: 'POST',
@@ -372,34 +416,24 @@ export default function VerificationPage() {
 
   const handleInsuredPersonAadharPhotoChange = async (index: number, file: File | null) => {
     if (!file) return;
-    try {
-      const fileUrl = await uploadHealthFile(file, id as string);
-      setFormData(prev => ({
-        ...prev,
-        insuredPersons: prev.insuredPersons.map((person, i) =>
-          i === index ? { ...person, aadharPhoto: fileUrl } : person
-        )
-      }));
-    } catch (err) {
-      alert('Failed to upload Aadhar photo');
-    }
+    // Store the file object temporarily, don't upload yet
+    setFormData(prev => ({
+      ...prev,
+      insuredPersons: prev.insuredPersons.map((person, i) =>
+        i === index ? { ...person, aadharPhoto: file } : person
+      )
+    }));
   };
 
   const handleMedicalDocumentUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    try {
-      const uploadedUrls = await Promise.all(
-        files.map(file => uploadHealthFile(file, id as string))
-      );
-      setFormData(prev => ({
-        ...prev,
-        insuredPersons: prev.insuredPersons.map((person, i) =>
-          i === index ? { ...person, medicalDocuments: [...person.medicalDocuments, ...uploadedUrls] } : person
-        )
-      }));
-    } catch (err) {
-      alert('Failed to upload medical document(s)');
-    }
+    // Store the file objects temporarily, don't upload yet
+    setFormData(prev => ({
+      ...prev,
+      insuredPersons: prev.insuredPersons.map((person, i) =>
+        i === index ? { ...person, medicalDocuments: [...person.medicalDocuments, ...files] } : person
+      )
+    }));
   };
 
   const removeMedicalDocument = (personIndex: number, docIndex: number) => {
@@ -920,7 +954,9 @@ export default function VerificationPage() {
                     <ul className="space-y-2">
                       {person.medicalDocuments.map((doc, docIndex) => (
                         <li key={docIndex} className="flex items-center justify-between bg-white p-2 rounded-md">
-                          <a href={doc} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline truncate max-w-xs">{doc.split('/').pop()}</a>
+                          <a href={typeof doc === 'string' ? doc : '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline truncate max-w-xs">
+                            {typeof doc === 'string' ? doc.split('/').pop() : doc.name}
+                          </a>
                           <button
                             type="button"
                             onClick={() => removeMedicalDocument(index, docIndex)}

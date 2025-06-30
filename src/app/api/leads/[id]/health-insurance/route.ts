@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import HealthInsuranceVerification from '@/models/HealthInsuranceVerification';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -9,28 +9,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const leadId = params.id;
     const formData = await req.formData();
 
-    // Handle file uploads for proposer
-    const proposerFileFields = [
-      'proposerPanImage',
-      'proposerAadharPhoto',
-      'proposerPhoto',
-      'proposerCancelledCheque',
-      'proposerBankStatement',
-      'proposerOtherDocument'
-    ];
-
     const verificationData: Record<string, any> = {
       leadId,
       status: 'submitted',
-      insuranceType: 'health_insurance'
+      insuranceType: 'health_insurance',
+      documents: {
+        proposerDocuments: [],
+        insuredPersonsDocuments: []
+      },
+      paymentDocuments: [],
+      verificationDocuments: []
     };
 
-    // Process proposer file uploads
-    for (const field of proposerFileFields) {
-      const file = formData.get(field) as File;
-      if (file) {
-        const filePath = await uploadFile(file, leadId, 'health-insurance');
-        verificationData[field] = filePath;
+    // Process proposer documents
+    const proposerDocumentTypes = ['PAN', 'Aadhaar', 'Photo', 'Cancelled Cheque', 'Bank Statement', 'Other'];
+    for (const docType of proposerDocumentTypes) {
+      const files = formData.getAll(`proposer_${docType.toLowerCase().replace(' ', '_')}`) as File[];
+      if (files.length > 0) {
+        const uploadedFiles = await Promise.all(
+          files.map(async (file) => {
+            const { url, originalFileName } = await uploadFileToS3(file, leadId, 'docs', 'health-insurance');
+            return { url, fileName: originalFileName };
+          })
+        );
+        verificationData.documents.proposerDocuments.push({
+          documentType: docType,
+          files: uploadedFiles
+        });
       }
     }
 
@@ -40,27 +45,53 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       try {
         const insuredPersons = JSON.parse(insuredPersonsData as string);
         const processedInsuredPersons = await Promise.all(
-          insuredPersons.map(async (person: any) => {
+          insuredPersons.map(async (person: any, index: number) => {
             const processedPerson = { ...person };
             
-            // Handle aadhar photo upload
-            const aadharPhotoFile = formData.get(`insuredPerson_${person.id}_aadharPhoto`) as File;
-            if (aadharPhotoFile) {
-              processedPerson.aadharPhoto = await uploadFile(aadharPhotoFile, leadId, 'health-insurance');
+            // Handle aadhar documents for each insured person
+            const aadharFiles = formData.getAll(`insuredPerson_${index}_aadhar`) as File[];
+            if (aadharFiles.length > 0) {
+              const uploadedAadharFiles = await Promise.all(
+                aadharFiles.map(async (file) => {
+                  const { url, originalFileName } = await uploadFileToS3(file, leadId, 'docs', 'health-insurance');
+                  return { url, fileName: originalFileName };
+                })
+              );
+              
+              if (!verificationData.documents.insuredPersonsDocuments[index]) {
+                verificationData.documents.insuredPersonsDocuments[index] = {
+                  personIndex: index,
+                  documents: []
+                };
+              }
+              
+              verificationData.documents.insuredPersonsDocuments[index].documents.push({
+                documentType: 'Aadhaar',
+                files: uploadedAadharFiles
+              });
             }
 
-            // Handle medical documents uploads
-            const medicalDocs = [];
-            let i = 0;
-            while (true) {
-              const file = formData.get(`insuredPerson_${person.id}_medicalDoc_${i}`) as File;
-              if (!file) break;
-              const filePath = await uploadFile(file, leadId, 'health-insurance');
-              medicalDocs.push(filePath);
-              i++;
-            }
-            if (medicalDocs.length > 0) {
-              processedPerson.medicalDocuments = medicalDocs;
+            // Handle medical documents for each insured person
+            const medicalFiles = formData.getAll(`insuredPerson_${index}_medical`) as File[];
+            if (medicalFiles.length > 0) {
+              const uploadedMedicalFiles = await Promise.all(
+                medicalFiles.map(async (file) => {
+                  const { url, originalFileName } = await uploadFileToS3(file, leadId, 'docs', 'health-insurance');
+                  return { url, fileName: originalFileName };
+                })
+              );
+              
+              if (!verificationData.documents.insuredPersonsDocuments[index]) {
+                verificationData.documents.insuredPersonsDocuments[index] = {
+                  personIndex: index,
+                  documents: []
+                };
+              }
+              
+              verificationData.documents.insuredPersonsDocuments[index].documents.push({
+                documentType: 'Medical Documents',
+                files: uploadedMedicalFiles
+              });
             }
 
             return processedPerson;
@@ -69,18 +100,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         verificationData.insuredPersons = processedInsuredPersons;
       } catch (error) {
         console.error('Error processing insured persons data:', error);
-        // Continue without insured persons data if there's an error
       }
     }
 
     // Process other form fields
     for (const [key, value] of formData.entries()) {
-      if (!proposerFileFields.includes(key) && key !== 'insuredPersons') {
-        // Only add non-empty values
+      if (!key.startsWith('proposer_') && !key.startsWith('insuredPerson_') && key !== 'insuredPersons') {
         if (value !== null && value !== undefined && value !== '') {
           verificationData[key] = value;
         }
       }
+    }
+
+    // Set panNumber and aadharNumber for search/filter
+    if (verificationData.proposerPanNumber) {
+      verificationData.panNumber = verificationData.proposerPanNumber;
+    }
+    if (verificationData.insuredPersons && verificationData.insuredPersons.length > 0) {
+      verificationData.aadharNumber = verificationData.insuredPersons[0].aadharNumber;
     }
 
     // Create verification record
