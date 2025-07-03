@@ -3,14 +3,20 @@ import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
 // Add paths that don't require authentication
-const publicPaths = ['/login', '/api/auth/login', '/api/auth/check'];
+const publicPaths = [
+  '/login', 
+  '/api/auth/login', 
+  '/api/auth/check',
+  '/video-call', // Allow video call routes
+  '/api/socketio' // Allow Socket.IO connections
+];
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
   // Allow public paths
-  if (publicPaths.includes(pathname)) {
+  if (publicPaths.includes(pathname) || pathname.startsWith('/video-call/') || pathname.startsWith('/api/socketio')) {
     return NextResponse.next();
   }
 
@@ -51,7 +57,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - api/socketio (Socket.IO connections)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/socketio).*)',
   ],
 }; 
