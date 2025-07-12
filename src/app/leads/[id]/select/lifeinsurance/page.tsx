@@ -24,8 +24,8 @@ interface FormData {
   isSmoker: 'Yes' | 'No';
   modeOfPayment: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
   premiumPaymentMethod: 'Single' | 'Regular' | 'Pay Till 60' | 'Limited Pay';
-  incomePayoutOption: 'Advance' | 'Arrears';
-  incomePayoutMode: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
+  incomePayoutOption: 'Advance' | 'Arrears' | 'None';
+  incomePayoutMode: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly' | 'Lumpsum';
   rider: string;
   
   // Step 1
@@ -445,6 +445,7 @@ export default function LifeInsurancePage() {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
+            <option value="None">None</option>
             <option value="Advance">Advance</option>
             <option value="Arrears">Arrears</option>
           </select>
@@ -462,6 +463,7 @@ export default function LifeInsurancePage() {
             <option value="Semi Annual">Semi Annual</option>
             <option value="Quarterly">Quarterly</option>
             <option value="Monthly">Monthly</option>
+            <option value="Lumpsum">Lumpsum</option>
           </select>
         </div>
 

@@ -29,8 +29,8 @@ interface LifeInsuranceVerification {
   isSmoker: 'Yes' | 'No';
   modeOfPayment: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
   premiumPaymentMethod: 'Single' | 'Regular' | 'Pay Till 60' | 'Limited Pay';
-  incomePayoutOption: 'Advance' | 'Arrears';
-  incomePayoutMode: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
+  incomePayoutOption: 'Advance' | 'Arrears' | 'None';
+  incomePayoutMode: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly' | 'Lumpsum';
   rider: string;
 
   // Personal Details
@@ -952,7 +952,7 @@ export default function LifeInsuranceVerificationPage() {
                 )}
 
                 {/* BI Document Section */}
-                {currentUser?.role === 'Payment_Coordinator' && editData?.status === 'payment_done' && (
+                {currentUser?.role === 'Payment_Coordinator' && editData?.status === 'link_created' && (
                   <div>
                     <h4 className="text-md font-medium text-gray-700 mb-3">BI Document</h4>
                     {editData?.paymentDocuments?.find(doc => doc.documentType === 'BI File') ? (

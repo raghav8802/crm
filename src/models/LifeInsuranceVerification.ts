@@ -22,8 +22,8 @@ export interface ILifeInsuranceVerification extends Document {
   isSmoker: 'Yes' | 'No';
   modeOfPayment: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
   premiumPaymentMethod: 'Single' | 'Regular' | 'Pay Till 60' | 'Limited Pay';
-  incomePayoutOption: 'Advance' | 'Arrears';
-  incomePayoutMode: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly';
+  incomePayoutOption: 'Advance' | 'Arrears' | 'None';
+  incomePayoutMode: 'Annual' | 'Semi Annual' | 'Quarterly' | 'Monthly' | 'Lumpsum';
   rider: string;
   
   // Personal Details
@@ -180,11 +180,11 @@ const LifeInsuranceVerificationSchema = new Schema({
   },
   incomePayoutOption: {
     type: String,
-    enum: ['Advance', 'Arrears']
+    enum: ['Advance', 'Arrears', 'None']
   },
   incomePayoutMode: {
     type: String,
-    enum: ['Annual', 'Semi Annual', 'Quarterly', 'Monthly']
+    enum: ['Annual', 'Semi Annual', 'Quarterly', 'Monthly', 'Lumpsum']
   },
   rider: String,
 

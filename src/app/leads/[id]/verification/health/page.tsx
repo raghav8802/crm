@@ -977,7 +977,97 @@ export default function HealthInsuranceVerificationPage() {
               </div>
             </div>
 
-            {/* Payment Screenshot and BI Document Upload Section */}
+            {/* BI Document Upload Section for Link Created Status */}
+            {editStatus === 'link_created' && (
+              <div className="mt-6 border-t pt-6">
+                <div className="grid grid-cols-1 gap-6">
+                  {/* BI Document */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4">BI Document</h3>
+                    {getDocumentsByType(editData?.paymentDocuments || [], 'BI File').length > 0 ? (
+                      <div className="space-y-4">
+                        {getDocumentsByType(editData?.paymentDocuments || [], 'BI File').map((file: any, index: number) => (
+                          <div key={index} className="bg-gray-50 rounded-lg p-4">
+                            {file.url.endsWith('.pdf') ? (
+                              <div className="aspect-[3/4] bg-white rounded-lg shadow-lg flex items-center justify-center">
+                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <img 
+                                src={file.url} 
+                                alt="BI Document"
+                                className="max-w-full h-auto rounded-lg shadow-lg"
+                              />
+                            )}
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-500">
+                            BI document uploaded successfully
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => window.open(getDocumentsByType(editData?.paymentDocuments || [], 'BI File')[0]?.url, '_blank')}
+                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View Document
+                            </button>
+                            <button
+                              onClick={handleChangeBiDocument}
+                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              Change Document
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
+                          <div className="text-center">
+                            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <div className="mt-4">
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                ref={biDocumentRef}
+                                onChange={handleBiDocumentUpload}
+                                disabled={biDocumentUploading}
+                                className="hidden"
+                              />
+                              <button
+                                onClick={handleChangeBiDocument}
+                                disabled={biDocumentUploading}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              >
+                                {biDocumentUploading ? 'Uploading...' : 'Upload BI Document'}
+                              </button>
+                            </div>
+                            <p className="mt-2 text-sm text-gray-500">
+                              Upload BI document (JPG, PNG, PDF - max 10MB)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {error && <div className="text-red-600 mt-4 text-center">{error}</div>}
+              </div>
+            )}
+
+            {/* Payment Screenshot and BI Document Upload Section for Payment Done Status */}
             {editStatus === 'payment_done' && (
               <div className="mt-6 border-t pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
