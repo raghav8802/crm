@@ -4,15 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LeadType } from '@/models/Lead';
 
 interface DocumentFile {
   url: string;
   fileName: string;
-}
-
-interface VerificationFile extends DocumentFile {
-  fileType: 'audio' | 'video';
 }
 
 interface FormData {
@@ -131,7 +126,6 @@ const MultiFileInput = ({
 export default function VerificationPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [lead, setLead] = useState<LeadType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
@@ -211,7 +205,6 @@ export default function VerificationPage() {
         throw new Error('Lead not found');
       }
       const leadData = await leadRes.json();
-      setLead(leadData);
 
       // Only proceed if lead status is 'Won'
       if (leadData.status !== 'Won') {
@@ -707,7 +700,7 @@ export default function VerificationPage() {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Full Name</label>
+          <label className="block text-sm font-medium text-gray-700">Father&apos;s Full Name</label>
           <input
             type="text"
             name="fatherName"
@@ -718,7 +711,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Age</label>
+          <label className="block text-sm font-medium text-gray-700">Father&apos;s Age</label>
           <input
             type="number"
             name="fatherAge"
@@ -729,7 +722,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Status</label>
+          <label className="block text-sm font-medium text-gray-700">Father&apos;s Status</label>
           <select
             name="fatherStatus"
             value={formData.fatherStatus}
@@ -743,7 +736,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mother's Full Name</label>
+          <label className="block text-sm font-medium text-gray-700">Mother&apos;s Full Name</label>
           <input
             type="text"
             name="motherName"
@@ -754,7 +747,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mother's Age</label>
+          <label className="block text-sm font-medium text-gray-700">Mother&apos;s Age</label>
           <input
             type="number"
             name="motherAge"
@@ -765,7 +758,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mother's Status</label>
+          <label className="block text-sm font-medium text-gray-700">Mother&apos;s Status</label>
           <select
             name="motherStatus"
             value={formData.motherStatus}
@@ -779,7 +772,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Spouse's Full Name</label>
+          <label className="block text-sm font-medium text-gray-700">Spouse&apos;s Full Name</label>
           <input
             type="text"
             name="spouseName"
@@ -790,7 +783,7 @@ export default function VerificationPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Spouse's Age</label>
+          <label className="block text-sm font-medium text-gray-700">Spouse&apos;s Age</label>
           <input
             type="number"
             name="spouseAge"

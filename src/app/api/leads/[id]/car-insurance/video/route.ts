@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import CarInsuranceVerification from '@/models/CarInsuranceVerification';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -18,12 +18,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Upload video file
-    const videoPath = await uploadFile(videoFile, leadId, 'car-insurance-plvc');
+    const { url } = await uploadFileToS3(videoFile, leadId, 'verification', 'car-insurance');
 
     // Update verification record with video path
     const verification = await CarInsuranceVerification.findOneAndUpdate(
       { leadId },
-      { $set: { plvcVideo: videoPath } },
+      { $set: { plvcVideo: url } },
       { new: true }
     );
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     return NextResponse.json({ 
       success: true, 
-      videoUrl: videoPath 
+      videoUrl: url 
     });
   } catch (error) {
     console.error('Error uploading video:', error);

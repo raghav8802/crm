@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface LifeInsuranceVerification {
   _id: string;
@@ -125,14 +126,12 @@ export default function LifeInsuranceVerificationPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [newRemark, setNewRemark] = useState('');
-  const [videoUploading, setVideoUploading] = useState(false);
   const [paymentScreenshotUploading, setPaymentScreenshotUploading] = useState(false);
   const [biDocumentUploading, setBiDocumentUploading] = useState(false);
   const [plvcUploading, setPlvcUploading] = useState(false);
   const [welcomeCallUploading, setWelcomeCallUploading] = useState(false);
   const [salesCallUploading, setSalesCallUploading] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState<string | null>(null);
-  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const paymentScreenshotRef = useRef<HTMLInputElement | null>(null);
   const biDocumentRef = useRef<HTMLInputElement | null>(null);
   const plvcInputRef = useRef<HTMLInputElement | null>(null);
@@ -146,7 +145,7 @@ export default function LifeInsuranceVerificationPage() {
         if (!res.ok) throw new Error('Failed to fetch user');
         const data = await res.json();
         setCurrentUser(data.user);
-      } catch (err) {
+      } catch {
         setCurrentUser(null);
       }
     };
@@ -187,7 +186,7 @@ export default function LifeInsuranceVerificationPage() {
     if (!editData) return;
     setIsSaving(true);
     try {
-      let payload: any = { ...editData };
+      const payload: any = { ...editData };
       
       // Add new remark if exists
       if (newRemark.trim()) {
@@ -211,8 +210,8 @@ export default function LifeInsuranceVerificationPage() {
       } else {
         throw new Error('Invalid response format');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update');
+    } catch {
+      setError('Failed to update');
     } finally {
       setIsSaving(false);
     }
@@ -868,9 +867,11 @@ export default function LifeInsuranceVerificationPage() {
                       <div className="space-y-4">
                         {editData.paymentDocuments.find(doc => doc.documentType === 'Payment Screenshot')?.files.map((file, index) => (
                           <div key={index} className="bg-gray-50 rounded-lg p-3">
-                            <img 
+                            <Image 
                               src={file.url} 
                               alt="Payment Screenshot"
+                              width={400}
+                              height={200}
                               className="max-w-full h-auto rounded-lg shadow-lg max-h-48 object-cover"
                             />
                             <div className="flex items-center justify-between mt-2">

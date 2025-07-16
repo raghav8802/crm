@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface CarInsuranceVerification {
   _id: string;
@@ -70,7 +71,7 @@ export default function CarInsuranceVerificationPage() {
         if (!res.ok) throw new Error('Failed to fetch user');
         const data = await res.json();
         setCurrentUser(data.user);
-      } catch (err) {
+      } catch {
         setCurrentUser(null);
       }
     };
@@ -125,15 +126,17 @@ export default function CarInsuranceVerificationPage() {
     if (!editData) return;
     setIsSaving(true);
     try {
-      let payload: any = prepareDataForSave(editData);
-      payload.status = editStatus;
-      if (newRemark.trim()) {
-        payload.newRemark = {
-          text: newRemark.trim(),
-          user: currentUser?.role || 'unknown',
-          timestamp: new Date().toISOString(),
-        };
-      }
+      const payload: any = {
+        ...prepareDataForSave(editData),
+        status: editStatus,
+        ...(newRemark.trim() && {
+          newRemark: {
+            text: newRemark.trim(),
+            user: currentUser?.role || 'unknown',
+            timestamp: new Date().toISOString(),
+          }
+        })
+      };
       const res = await fetch(`/api/leads/${params.id}/car-insurance`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -601,9 +604,11 @@ export default function CarInsuranceVerificationPage() {
                                 </svg>
                               </div>
                             ) : (
-                              <img 
+                              <Image 
                                 src={verification.biDocument} 
                                 alt="BI Document"
+                                width={400}
+                                height={300}
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
                             )}
@@ -682,9 +687,11 @@ export default function CarInsuranceVerificationPage() {
                       {verification?.paymentScreenshot ? (
                         <div className="space-y-4">
                           <div className="bg-gray-50 rounded-lg p-4">
-                            <img 
+                            <Image 
                               src={verification.paymentScreenshot} 
                               alt="Payment Screenshot"
+                              width={400}
+                              height={300}
                               className="max-w-full h-auto rounded-lg shadow-lg"
                             />
                           </div>
@@ -761,9 +768,11 @@ export default function CarInsuranceVerificationPage() {
                                 </svg>
                               </div>
                             ) : (
-                              <img 
+                              <Image 
                                 src={verification.biDocument} 
                                 alt="BI Document"
+                                width={400}
+                                height={300}
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
                             )}

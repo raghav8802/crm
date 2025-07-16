@@ -31,12 +31,11 @@ export async function DELETE(
 
     // Find the document group
     let documentGroup;
-    let fileToDelete;
     
     if (documentType === 'Payment Screenshot' || documentType === 'BI File') {
-      documentGroup = verification.paymentDocuments?.find((doc: any) => doc.documentType === documentType);
+      documentGroup = verification.paymentDocuments?.find((doc: Record<string, unknown>) => doc.documentType === documentType);
     } else {
-      documentGroup = verification.documents?.find((doc: any) => doc.documentType === documentType);
+      documentGroup = verification.documents?.find((doc: Record<string, unknown>) => doc.documentType === documentType);
     }
 
     if (!documentGroup || !documentGroup.files[fileIndex]) {
@@ -46,7 +45,7 @@ export async function DELETE(
       );
     }
 
-    fileToDelete = documentGroup.files[fileIndex];
+    const fileToDelete = documentGroup.files[fileIndex];
 
     // Delete from S3
     try {
@@ -69,11 +68,11 @@ export async function DELETE(
     if (documentGroup.files.length === 0) {
       if (documentType === 'Payment Screenshot' || documentType === 'BI File') {
         verification.paymentDocuments = verification.paymentDocuments?.filter(
-          (doc: any) => doc.documentType !== documentType
+          (doc: Record<string, unknown>) => doc.documentType !== documentType
         ) || [];
       } else {
         verification.documents = verification.documents?.filter(
-          (doc: any) => doc.documentType !== documentType
+          (doc: Record<string, unknown>) => doc.documentType !== documentType
         ) || [];
       }
     }

@@ -67,7 +67,7 @@ export default function LeadDetailsPage() {
           const data = await res.json();
           setCurrentUser(data.user);
         }
-      } catch (e) {
+      } catch {
         // handle error
       }
     };

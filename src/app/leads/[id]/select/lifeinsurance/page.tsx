@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LeadType } from '@/models/Lead';
 
 interface FormData {
   // Initial Selection
@@ -100,7 +99,6 @@ interface FormData {
 export default function LifeInsurancePage() {
   const { id } = useParams();
   const router = useRouter();
-  const [lead, setLead] = useState<LeadType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
@@ -202,7 +200,6 @@ export default function LifeInsurancePage() {
         throw new Error('Lead not found');
       }
       const leadData = await leadRes.json();
-      setLead(leadData);
 
       if (leadData.status !== 'Won') {
         router.push(`/leads/${id}`);
@@ -681,7 +678,7 @@ export default function LifeInsurancePage() {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Full Name</label>
+                      <label className="block text-sm font-medium text-gray-700">Father&apos;s Full Name</label>
           <input
             type="text"
             name="fatherName"
@@ -692,7 +689,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Age</label>
+                      <label className="block text-sm font-medium text-gray-700">Father&apos;s Age</label>
           <input
             type="number"
             name="fatherAge"
@@ -703,7 +700,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Status</label>
+                      <label className="block text-sm font-medium text-gray-700">Father&apos;s Status</label>
           <select
             name="fatherStatus"
             value={formData.fatherStatus}
@@ -716,7 +713,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mother's Full Name</label>
+                      <label className="block text-sm font-medium text-gray-700">Mother&apos;s Full Name</label>
           <input
             type="text"
             name="motherName"
@@ -727,7 +724,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mother's Age</label>
+                      <label className="block text-sm font-medium text-gray-700">Mother&apos;s Age</label>
           <input
             type="number"
             name="motherAge"
@@ -738,7 +735,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Mother's Status</label>
+                      <label className="block text-sm font-medium text-gray-700">Mother&apos;s Status</label>
           <select
             name="motherStatus"
             value={formData.motherStatus}
@@ -751,7 +748,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Spouse's Full Name</label>
+                      <label className="block text-sm font-medium text-gray-700">Spouse&apos;s Full Name</label>
           <input
             type="text"
             name="spouseName"
@@ -762,7 +759,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Spouse's Age</label>
+                      <label className="block text-sm font-medium text-gray-700">Spouse&apos;s Age</label>
           <input
             type="number"
             name="spouseAge"
@@ -872,7 +869,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">LA Father's Name</label>
+                      <label className="block text-sm font-medium text-gray-700">LA Father&apos;s Name</label>
           <input
             type="text"
             name="laFatherName"
@@ -883,7 +880,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">LA Father's Date of Birth</label>
+                      <label className="block text-sm font-medium text-gray-700">LA Father&apos;s Date of Birth</label>
           <input
             type="date"
             name="laFatherDob"
@@ -894,7 +891,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">LA Mother's Name</label>
+                      <label className="block text-sm font-medium text-gray-700">LA Mother&apos;s Name</label>
           <input
             type="text"
             name="laMotherName"
@@ -905,7 +902,7 @@ export default function LifeInsurancePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">LA Mother's Date of Birth</label>
+                      <label className="block text-sm font-medium text-gray-700">LA Mother&apos;s Date of Birth</label>
           <input
             type="date"
             name="laMotherDob"
@@ -942,7 +939,7 @@ export default function LifeInsurancePage() {
           <textarea
             name="remarks"
             value={formData.remarks}
-            onChange={(e) => handleInputChange(e as any)}
+            onChange={handleInputChange}
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />

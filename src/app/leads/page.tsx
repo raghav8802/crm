@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LeadType } from '@/models/Lead';
 import { UserType } from '@/models/User';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ export default function LeadsPage() {
   } | null>(null);
   const [currentUser, setCurrentUser] = useState<{ _id: string; role: string } | null>(null);
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/check');
       if (!res.ok) throw new Error('Failed to fetch user');
@@ -37,9 +37,9 @@ export default function LeadsPage() {
     } catch (err) {
       console.error('Error fetching user:', err);
     }
-  };
+  }, []);
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       const res = await fetch('/api/leads');
       if (!res.ok) {
@@ -60,9 +60,9 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await fetch('/api/users');
       if (!res.ok) throw new Error('Failed to fetch users');
@@ -71,13 +71,13 @@ export default function LeadsPage() {
     } catch (err) {
       console.error('Error fetching users:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCurrentUser();
     fetchLeads();
     fetchUsers();
-  }, []);
+  }, [fetchCurrentUser, fetchLeads, fetchUsers]);
 
   // Set selected user when currentUser changes
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function LeadsPage() {
     if (currentUser) {
       fetchLeads();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchLeads]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this lead?')) {

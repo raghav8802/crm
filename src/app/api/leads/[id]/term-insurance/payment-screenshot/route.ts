@@ -77,7 +77,7 @@ export async function POST(
     }
 
     // Find existing Payment Screenshot group
-    let paymentScreenshotGroup = verification.paymentDocuments.find((doc: any) => doc.documentType === 'Payment Screenshot');
+    const paymentScreenshotGroup = verification.paymentDocuments.find((doc: Record<string, unknown>) => doc.documentType === 'Payment Screenshot');
 
     if (paymentScreenshotGroup) {
       // If group exists, update its files

@@ -77,7 +77,7 @@ export async function PUT(
     const leadId = params.id;
     const updateData = await request.json();
 
-    let updateOps: any = {};
+    const updateOps: Record<string, unknown> = {};
     if (updateData.newRemark) {
       // Convert timestamp string to Date object
       const remark = {

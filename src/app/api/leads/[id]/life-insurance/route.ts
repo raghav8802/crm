@@ -27,15 +27,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const formData = await req.formData();
 
     // Prepare document arrays
-    const proposerDocuments: any[] = [];
-    const laDocuments: any[] = [];
-    const paymentDocuments: any[] = [];
-    const verificationDocuments: any[] = [];
+    const proposerDocuments: Record<string, unknown>[] = [];
+    const laDocuments: Record<string, unknown>[] = [];
+    const paymentDocuments: Record<string, unknown>[] = [];
+    const verificationDocuments: Record<string, unknown>[] = [];
 
     // Helper to add file to doc array
-    const addFileToDocArray = async (arr: any[], documentType: string, file: File, leadId: string, category: 'docs' | 'payment' | 'verification') => {
+    const addFileToDocArray = async (arr: Record<string, unknown>[], documentType: string, file: File, leadId: string, category: 'docs' | 'payment' | 'verification') => {
       const { url, originalFileName } = await uploadFileToS3(file, leadId, category, 'life-insurance');
-      let docGroup = arr.find((d: any) => d.documentType === documentType);
+      let docGroup = arr.find((d: Record<string, unknown>) => d.documentType === documentType);
       if (!docGroup) {
         docGroup = { documentType, files: [] };
         arr.push(docGroup);
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Payment and verification docs can be handled in their own endpoints, but you can add logic here if needed
 
     // Collect other fields
-    const verificationData: Record<string, any> = {
+    const verificationData: Record<string, unknown> = {
       leadId,
       status: 'submitted',
       insuranceType: 'life_insurance',

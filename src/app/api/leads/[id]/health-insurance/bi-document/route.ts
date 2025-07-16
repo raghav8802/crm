@@ -12,7 +12,6 @@ export async function POST(
     const leadId = params.id;
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const documentType = formData.get('documentType') as string || 'BI File';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -22,7 +21,7 @@ export async function POST(
     const { url, originalFileName } = await uploadFileToS3(file, leadId, 'payment', 'health-insurance');
 
     // Find existing verification record
-    let verification = await HealthInsuranceVerification.findOne({ leadId });
+    const verification = await HealthInsuranceVerification.findOne({ leadId });
     
     if (!verification) {
       return NextResponse.json({ error: 'Verification record not found' }, { status: 404 });
@@ -34,7 +33,7 @@ export async function POST(
     }
 
     // Find existing BI File document or create new one
-    let biDocument = verification.paymentDocuments.find((doc: any) => doc.documentType === 'BI File');
+    const biDocument = verification.paymentDocuments.find((doc: { documentType: string }) => doc.documentType === 'BI File');
     
     if (biDocument) {
       // Update existing BI File document

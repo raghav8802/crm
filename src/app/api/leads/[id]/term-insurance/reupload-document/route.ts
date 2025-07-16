@@ -44,9 +44,9 @@ export async function POST(
     let documentGroup;
     
     if (documentType === 'Payment Screenshot' || documentType === 'BI File') {
-      documentGroup = verification.paymentDocuments?.find((doc: any) => doc.documentType === documentType);
+      documentGroup = verification.paymentDocuments?.find((doc: Record<string, unknown>) => doc.documentType === documentType);
     } else {
-      documentGroup = verification.documents?.find((doc: any) => doc.documentType === documentType);
+      documentGroup = verification.documents?.find((doc: Record<string, unknown>) => doc.documentType === documentType);
     }
 
     if (!documentGroup || !documentGroup.files[fileIndex]) {

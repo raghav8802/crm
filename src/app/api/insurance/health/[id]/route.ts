@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import HealthInsurance from '@/models/HealthInsuranceVerification';
@@ -6,11 +7,12 @@ import path from 'path';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const application = await HealthInsurance.findById(params.id)
+    const { id } = await params;
+    const application = await HealthInsurance.findById(id)
       .populate('leadId', 'name phoneNumber email');
 
     if (!application) {
@@ -48,7 +50,7 @@ export async function PATCH(
     await mkdir(leadDir, { recursive: true });
     await mkdir(docsDir, { recursive: true });
 
-    const processedData: any = {};
+    const processedData: Record<string, string> = {};
     
     // Process regular form fields
     for (const [key, value] of formData.entries()) {
@@ -59,7 +61,7 @@ export async function PATCH(
         await writeFile(filePath, Buffer.from(await value.arrayBuffer()));
         processedData[key] = `/uploads/health-insurance/${id}/documents/${fileName}`;
       } else {
-        processedData[key] = value;
+        processedData[key] = value as string;
       }
     }
 
@@ -119,7 +121,7 @@ export async function POST(
     await mkdir(leadDir, { recursive: true });
     await mkdir(docsDir, { recursive: true });
 
-    const processedData: any = {};
+    const processedData: Record<string, string> = {};
     
     // Process regular form fields
     for (const [key, value] of formData.entries()) {
@@ -130,7 +132,7 @@ export async function POST(
         await writeFile(filePath, Buffer.from(await value.arrayBuffer()));
         processedData[key] = `/uploads/health-insurance/${id}/documents/${fileName}`;
       } else {
-        processedData[key] = value;
+        processedData[key] = value as string;
       }
     }
 

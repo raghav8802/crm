@@ -41,7 +41,7 @@ export async function POST(
     const uploadedFiles = await Promise.all(uploadPromises);
 
     // Find existing verification record
-    let verification = await HealthInsuranceVerification.findOne({ leadId });
+    const verification = await HealthInsuranceVerification.findOne({ leadId });
     
     if (!verification) {
       return NextResponse.json({ error: 'Verification record not found' }, { status: 404 });
@@ -53,7 +53,7 @@ export async function POST(
     }
 
     // Find existing document of the same type or create new one
-    let existingDocument = verification.verificationDocuments.find((doc: any) => doc.documentType === documentType);
+    const existingDocument = verification.verificationDocuments.find((doc: { documentType: string }) => doc.documentType === documentType);
     
     if (existingDocument) {
       // Add new files to existing document

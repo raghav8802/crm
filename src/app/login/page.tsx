@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -23,8 +22,8 @@ export default function LoginPage() {
           setUserName(data.user.name || 'User');
           router.push('/');
         }
-      } catch (err) {
-        console.error('Auth check failed:', err);
+      } catch {
+        console.error('Auth check failed');
       }
     };
     checkAuth();
@@ -53,7 +52,7 @@ export default function LoginPage() {
       } else {
         setError(data.error || 'Login failed');
       }
-    } catch (err) {
+    } catch {
       router.push('/');
     } finally {
       setLoading(false);

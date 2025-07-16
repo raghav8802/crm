@@ -9,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const leadId = params.id;
     const formData = await req.formData();
 
-    const verificationData: Record<string, any> = {
+    const verificationData: Record<string, unknown> = {
       leadId,
       status: 'submitted',
       insuranceType: 'health_insurance',
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       try {
         const insuredPersons = JSON.parse(insuredPersonsData as string);
         const processedInsuredPersons = await Promise.all(
-          insuredPersons.map(async (person: any, index: number) => {
+          insuredPersons.map(async (person: Record<string, unknown>, index: number) => {
             const processedPerson = { ...person };
             
             // Handle aadhar documents for each insured person
@@ -161,7 +161,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     await connectDB();
     const leadId = params.id;
     const updateData = await req.json();
-    let updateQuery: any = { $set: {} };
+    const updateQuery: Record<string, unknown> = { $set: {} };
 
     if (updateData.newRemark) {
       updateQuery.$push = { remarks: updateData.newRemark };

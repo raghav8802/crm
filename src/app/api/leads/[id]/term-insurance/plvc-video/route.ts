@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import { Lead } from '@/models/Lead';
 import TermInsuranceVerification, { VerificationDocumentGroup } from '@/models/TermInsuranceVerification';
 import { uploadFileToS3 } from '@/utils/s3Upload';
 
@@ -52,14 +51,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       })
     );
 
-    let docGroup = verification.verificationDocuments.find(
+    const docGroup = verification.verificationDocuments.find(
       (doc: VerificationDocumentGroup) => doc.documentType === documentType
     );
 
     if (docGroup) {
-      docGroup.files.push(...(uploadedFiles as any));
+      docGroup.files.push(...uploadedFiles);
     } else {
-      (verification.verificationDocuments as any).push({
+      verification.verificationDocuments.push({
         documentType,
         files: uploadedFiles,
       });

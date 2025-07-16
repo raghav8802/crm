@@ -48,7 +48,7 @@ export async function PATCH(
     await mkdir(leadDir, { recursive: true });
     await mkdir(docsDir, { recursive: true });
 
-    const processedData: any = {};
+    const processedData: Record<string, string> = {};
     
     // Process regular form fields
     for (const [key, value] of formData.entries()) {
@@ -59,7 +59,7 @@ export async function PATCH(
         await writeFile(filePath, Buffer.from(await value.arrayBuffer()));
         processedData[key] = `/uploads/term-insurance/${id}/documents/${fileName}`;
       } else {
-        processedData[key] = value;
+        processedData[key] = value as string;
       }
     }
 
@@ -119,7 +119,7 @@ export async function POST(
     await mkdir(leadDir, { recursive: true });
     await mkdir(docsDir, { recursive: true });
 
-    const processedData: any = {};
+    const processedData: Record<string, string> = {};
     
     // Process regular form fields
     for (const [key, value] of formData.entries()) {
@@ -130,7 +130,7 @@ export async function POST(
         await writeFile(filePath, Buffer.from(await value.arrayBuffer()));
         processedData[key] = `/uploads/term-insurance/${id}/documents/${fileName}`;
       } else {
-        processedData[key] = value;
+        processedData[key] = value as string;
       }
     }
 

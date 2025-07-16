@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const { url, originalFileName } = await uploadFileToS3(file, leadId, category as any, 'health-insurance');
+    const { url, originalFileName } = await uploadFileToS3(file, leadId, category as string, 'health-insurance');
     
     return NextResponse.json({ 
       success: true, 

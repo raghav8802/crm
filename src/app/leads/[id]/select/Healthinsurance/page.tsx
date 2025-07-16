@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LeadType } from '@/models/Lead';
 
 interface InsuredPerson {
   name: string;
@@ -127,7 +126,6 @@ async function uploadHealthFile(file: File, leadId: string, category: 'docs' | '
 export default function VerificationPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [lead, setLead] = useState<LeadType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
@@ -241,7 +239,6 @@ export default function VerificationPage() {
         throw new Error('Lead not found');
       }
       const leadData = await leadRes.json();
-      setLead(leadData);
 
       // Only proceed if lead status is 'Won'
       if (leadData.status !== 'Won') {
@@ -666,7 +663,7 @@ export default function VerificationPage() {
           <textarea
             name="proposerAddress"
             value={formData.proposerAddress}
-            onChange={(e) => handleInputChange(e as any)}
+            onChange={handleInputChange}
             rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />

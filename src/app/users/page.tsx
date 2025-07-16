@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { UserType, UserRole } from '@/models/User';
 import { useRouter } from 'next/navigation';
@@ -15,16 +15,11 @@ export default function UsersPage() {
     name: '',
     email: '',
     password: '',
-    role: UserRole.SALES_EXECUTIVE
+    role: UserRole.SALES_MANAGER
   });
-  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    checkUserAccess();
-  }, []);
-
-  const checkUserAccess = async () => {
+  const checkUserAccess = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/check');
       if (!res.ok) throw new Error('Failed to fetch user');
@@ -35,13 +30,16 @@ export default function UsersPage() {
         return;
       }
       
-      setCurrentUser(data.user);
       fetchUsers();
     } catch (err) {
       console.error('Error checking user access:', err);
       router.push('/login');
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkUserAccess();
+  }, [checkUserAccess]);
 
   const fetchUsers = async () => {
     try {
@@ -119,8 +117,12 @@ export default function UsersPage() {
         return 'bg-purple-100 text-purple-800';
       case UserRole.SALES_MANAGER:
         return 'bg-blue-100 text-blue-800';
-      case UserRole.SALES_EXECUTIVE:
+      case UserRole.PAYMENT_COORDINATOR:
         return 'bg-green-100 text-green-800';
+      case UserRole.PLVC_VERIFICATOR:
+        return 'bg-yellow-100 text-yellow-800';
+      case UserRole.MIS:
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -264,7 +266,9 @@ export default function UsersPage() {
                 >
                   <option value={UserRole.ADMIN}>Admin</option>
                   <option value={UserRole.SALES_MANAGER}>Sales Manager</option>
-                  <option value={UserRole.SALES_EXECUTIVE}>Sales Executive</option>
+                  <option value={UserRole.PAYMENT_COORDINATOR}>Payment Coordinator</option>
+                  <option value={UserRole.PLVC_VERIFICATOR}>PLVC Verificator</option>
+                  <option value={UserRole.MIS}>MIS</option>
                 </select>
               </div>
               <div className="flex justify-end space-x-4">

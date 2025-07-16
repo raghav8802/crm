@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface File {
   url: string;
@@ -133,7 +134,7 @@ export default function TermInsuranceVerificationPage() {
         if (!res.ok) throw new Error('Failed to fetch user');
         const data = await res.json();
         setCurrentUser(data.user);
-      } catch (err) {
+      } catch {
         setCurrentUser(null);
       }
     };
@@ -174,7 +175,7 @@ export default function TermInsuranceVerificationPage() {
     if (!editData) return;
     setIsSaving(true);
     try {
-      let payload: any = { ...editData };
+      const payload: any = { ...editData };
       if (newRemark.trim()) {
         payload.newRemark = {
           text: newRemark.trim(),
@@ -558,25 +559,7 @@ export default function TermInsuranceVerificationPage() {
     );
   };
 
-  const renderDocumentLink = (url: string | undefined, label: string) => {
-    if (!url) return null;
-    return (
-      <div className="mb-2">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 flex items-center"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-          {label}
-        </a>
-      </div>
-    );
-  };
+
 
   const renderCallRecordings = () => {
     if (!verification || currentUser?.role !== 'PLVC_verificator' || !['PLVC_verification', 'PLVC_done'].includes(verification.status)) {
@@ -1043,9 +1026,11 @@ export default function TermInsuranceVerificationPage() {
                                 </svg>
                               </div>
                             ) : (
-                              <img 
+                              <Image 
                                 src={biDocumentDoc.url} 
                                 alt="BI Document"
+                                width={400}
+                                height={300}
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
                             )}
@@ -1124,9 +1109,11 @@ export default function TermInsuranceVerificationPage() {
                       {paymentScreenshotDoc ? (
                         <div className="space-y-4">
                           <div className="bg-gray-50 rounded-lg p-4">
-                            <img 
+                            <Image 
                               src={paymentScreenshotDoc.url} 
                               alt="Payment Screenshot"
+                              width={400}
+                              height={300}
                               className="max-w-full h-auto rounded-lg shadow-lg"
                             />
                           </div>
@@ -1203,9 +1190,11 @@ export default function TermInsuranceVerificationPage() {
                                 </svg>
                               </div>
                             ) : (
-                              <img 
+                              <Image 
                                 src={biDocumentDoc.url} 
                                 alt="BI Document"
+                                width={400}
+                                height={300}
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
                             )}

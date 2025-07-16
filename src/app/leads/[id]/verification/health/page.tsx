@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Remark {
   text: string;
@@ -117,7 +118,6 @@ interface HealthInsuranceVerification {
 
 export default function HealthInsuranceVerificationPage() {
   const params = useParams();
-  const router = useRouter();
   const [verification, setVerification] = useState<HealthInsuranceVerification | null>(null);
   const [editData, setEditData] = useState<Partial<HealthInsuranceVerification>>({});
   const [loading, setLoading] = useState(true);
@@ -126,8 +126,6 @@ export default function HealthInsuranceVerificationPage() {
   const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [editStatus, setEditStatus] = useState<HealthInsuranceVerification['status']>('submitted');
   const [newRemark, setNewRemark] = useState('');
-  const videoInputRef = useRef<HTMLInputElement | null>(null);
-  const [videoUploading, setVideoUploading] = useState(false);
   const paymentScreenshotRef = useRef<HTMLInputElement | null>(null);
   const [paymentScreenshotUploading, setPaymentScreenshotUploading] = useState(false);
   const [plvcUploading, setPlvcUploading] = useState(false);
@@ -146,7 +144,7 @@ export default function HealthInsuranceVerificationPage() {
         if (!res.ok) throw new Error('Failed to fetch user');
         const data = await res.json();
         setCurrentUser(data.user);
-      } catch (err) {
+      } catch {
         setCurrentUser(null);
       }
     };
@@ -208,7 +206,7 @@ export default function HealthInsuranceVerificationPage() {
     if (!editData) return;
     setIsSaving(true);
     try {
-      let payload: any = {};
+      const payload: any = {};
       
       // Only include changed fields
       Object.keys(editData).forEach(key => {
@@ -248,8 +246,8 @@ export default function HealthInsuranceVerificationPage() {
       } else {
         throw new Error('Invalid response format');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update');
+    } catch {
+      setError('Failed to update');
     } finally {
       setIsSaving(false);
     }
@@ -341,48 +339,6 @@ export default function HealthInsuranceVerificationPage() {
   const getInsuredPersonDocuments = (personIndex: number, documentType: string) => {
     const personDocs = editData?.documents?.insuredPersonsDocuments?.find(doc => doc.personIndex === personIndex);
     return personDocs?.documents?.find(doc => doc.documentType === documentType)?.files || [];
-  };
-
-  // Video/Audio upload handler (with validation)
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    
-    // Check file type
-    const isVideo = file.type.startsWith('video/');
-    const isAudio = file.type.startsWith('audio/');
-    
-    if (!isVideo && !isAudio) {
-      setError('Please upload only MP4, MOV video files or MP3, WAV audio files');
-      return;
-    }
-    
-    if (file.size > 100 * 1024 * 1024) { // 100MB limit
-      setError('File size should be less than 100MB');
-      return;
-    }
-    
-    setVideoUploading(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append('media', file);
-      const res = await fetch(`/api/leads/${params.id}/health-insurance/plvc-video`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Failed to upload file');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setVerification(data.data);
-        setEditData(data.data);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload file');
-    } finally {
-      setVideoUploading(false);
-      if (videoInputRef.current) videoInputRef.current.value = '';
-    }
   };
 
   // Payment Screenshot upload handler
@@ -995,9 +951,11 @@ export default function HealthInsuranceVerificationPage() {
                                 </svg>
                               </div>
                             ) : (
-                              <img 
+                              <Image 
                                 src={file.url} 
                                 alt="BI Document"
+                                width={400}
+                                height={300}
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
                             )}
@@ -1078,9 +1036,11 @@ export default function HealthInsuranceVerificationPage() {
                       <div className="space-y-4">
                         {getDocumentsByType(editData?.paymentDocuments || [], 'Payment Screenshot').map((file: any, index: number) => (
                           <div key={index} className="bg-gray-50 rounded-lg p-4">
-                            <img 
+                            <Image 
                               src={file.url} 
                               alt="Payment Screenshot"
+                              width={400}
+                              height={300}
                               className="max-w-full h-auto rounded-lg shadow-lg"
                             />
                           </div>
@@ -1159,9 +1119,11 @@ export default function HealthInsuranceVerificationPage() {
                                 </svg>
                               </div>
                             ) : (
-                              <img 
+                              <Image 
                                 src={file.url} 
                                 alt="BI Document"
+                                width={400}
+                                height={300}
                                 className="max-w-full h-auto rounded-lg shadow-lg"
                               />
                             )}

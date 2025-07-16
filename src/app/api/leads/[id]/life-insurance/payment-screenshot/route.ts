@@ -68,7 +68,7 @@ export async function POST(
     const documentType = type === 'payment' ? 'Payment Screenshot' : 'BI File';
 
     // Find existing document group
-    let documentGroup = verification.paymentDocuments.find((doc: any) => doc.documentType === documentType);
+    const documentGroup = verification.paymentDocuments.find((doc: Record<string, unknown>) => doc.documentType === documentType);
 
     if (documentGroup) {
       // If group exists, update its files

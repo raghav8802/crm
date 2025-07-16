@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Lead } from '@/models/Lead';
-import { LeadThread } from '@/models/LeadThread';
 import mongoose from 'mongoose';
 
 export async function POST(req: Request) {
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
     await lead.save();
 
     return NextResponse.json(lead, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating lead:', error);
     if (error.name === 'ValidationError') {
       return NextResponse.json(

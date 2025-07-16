@@ -70,7 +70,7 @@ export async function POST(
     const fileType = isVideo ? 'video' : 'audio';
 
     // Find existing document group
-    let documentGroup = verification.verificationDocuments.find((doc: any) => doc.documentType === documentType);
+    const documentGroup = verification.verificationDocuments.find((doc: Record<string, unknown>) => doc.documentType === documentType);
 
     if (documentGroup) {
       // If group exists, add the new file to its files array

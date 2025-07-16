@@ -43,7 +43,7 @@ export async function DELETE(
 
     // Find the document group
     const documentGroupIndex = documentArray.findIndex(
-      (doc: any) => doc.documentType === documentType
+      (doc: { documentType: string }) => doc.documentType === documentType
     );
 
     if (documentGroupIndex === -1) {

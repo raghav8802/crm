@@ -51,7 +51,6 @@ export default function Home() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [chartData, setChartData] = useState({
@@ -102,7 +101,6 @@ export default function Home() {
         const isAdmin = userData.user.role === 'admin';
         console.log('Current User ID:', currentUserId, 'Is Admin:', isAdmin);
         setUserName(userData.user.name || 'User');
-        setCurrentUserId(currentUserId);
         setIsAdmin(isAdmin);
 
         // Fetch all data in parallel
@@ -196,28 +194,6 @@ export default function Home() {
     return user ? user.name : 'Unassigned';
   };
 
-  const statusColors = {
-    'Fresh': 'rgba(59, 130, 246, 0.5)',
-    'Interested': 'rgba(34, 197, 94, 0.5)',
-    'Callback Later': 'rgba(234, 179, 8, 0.5)',
-    'Wrong Number': 'rgba(239, 68, 68, 0.5)',
-    'Won': 'rgba(168, 85, 247, 0.5)',
-    'Lost': 'rgba(156, 163, 175, 0.5)'
-  };
-
-  const barChartData = {
-    labels: stats?.statusStats.map((stat) => stat._id || 'Unassigned'),
-    datasets: [
-      {
-        label: 'Leads by Status',
-        data: stats?.statusStats.map((stat) => stat.count),
-        backgroundColor: stats?.statusStats.map((stat) => statusColors[stat._id as keyof typeof statusColors] || 'rgba(156, 163, 175, 0.5)'),
-        borderColor: stats?.statusStats.map((stat) => statusColors[stat._id as keyof typeof statusColors]?.replace('0.5', '1') || 'rgba(156, 163, 175, 1)'),
-        borderWidth: 1,
-      },
-    ],
-  };
-
   const pieChartData = {
     labels: stats?.assignedStats.map((stat) => {
       if (!stat._id) return 'Unassigned';
@@ -280,7 +256,7 @@ export default function Home() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Welcome, {userName}!
             </h1>
-            <p className="text-gray-600 mt-2 text-sm sm:text-base">Here's your dashboard overview</p>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Here&apos;s your dashboard overview</p>
           </div>
           <div className="text-right">
             <h1 className="text-lg sm:text-xl font-bold text-blue-700">GOPRO CRM</h1>

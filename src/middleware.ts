@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
     }
 
     return NextResponse.next();
-  } catch (error) {
+  } catch {
     // Redirect to login if token is invalid
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);

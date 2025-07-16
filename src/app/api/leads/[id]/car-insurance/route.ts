@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import CarInsuranceVerification from '@/models/CarInsuranceVerification';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       'policyCopy'
     ];
 
-    const verificationData: Record<string, any> = {
+    const verificationData: Record<string, string | boolean> = {
       leadId,
       status: 'submitted',
       insuranceType: 'car_insurance'
@@ -27,8 +27,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     for (const field of fileFields) {
       const file = formData.get(field) as File;
       if (file) {
-        const filePath = await uploadFile(file, leadId, 'car-insurance');
-        verificationData[field] = filePath;
+        const { url } = await uploadFileToS3(file, leadId, 'docs', 'car-insurance');
+        verificationData[field] = url;
       }
     }
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         if (key === 'isBharatSeries') {
           verificationData[key] = value === 'true';
         } else {
-          verificationData[key] = value;
+          verificationData[key] = value as string;
         }
       }
     }
@@ -86,7 +86,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const leadId = params.id;
     const updateData = await req.json();
 
-    let updateOps: any = {};
+    const updateOps: Record<string, unknown> = {};
     // If newRemark is present, use $push for remarks
     if (updateData.newRemark) {
       updateOps.$push = { remarks: updateData.newRemark };

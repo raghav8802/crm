@@ -12,18 +12,6 @@ const educationOptions = [
   { value: 'Other', label: 'Other' },
 ];
 
-const statusOptions = [
-  { value: 'Fresh', label: 'Fresh' },
-  { value: 'Interested', label: 'Interested' },
-  { value: 'Ringing', label: 'Ringing' },
-  { value: 'Follow Up', label: 'Follow Up' },
-  { value: 'Call Disconnected', label: 'Call Disconnected' }, 
-  { value: 'Callback Later', label: 'Callback Later' },
-  { value: 'Wrong Number', label: 'Wrong Number' },
-  { value: 'Sale Done', label: 'Sale Done' },
-  { value: 'Lost', label: 'Lost' },
-];
-
 const sourceOptions = [
   { value: 'IVR', label: 'IVR' },
   { value: 'META', label: 'META' },

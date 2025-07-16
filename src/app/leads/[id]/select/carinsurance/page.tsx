@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LeadType } from '@/models/Lead';
 
 interface FormData {
   selectedCompany: string;
@@ -36,7 +35,6 @@ interface FormData {
 export default function CarInsurancePage() {
   const { id } = useParams();
   const router = useRouter();
-  const [lead, setLead] = useState<LeadType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<FormData>({
@@ -67,14 +65,13 @@ export default function CarInsurancePage() {
     policyCopy: null,
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const leadRes = await fetch(`/api/leads/${id}`);
       if (!leadRes.ok) {
         throw new Error('Lead not found');
       }
       const leadData = await leadRes.json();
-      setLead(leadData);
 
       if (leadData.status !== 'Won') {
         router.push(`/leads/${id}`);
@@ -90,11 +87,11 @@ export default function CarInsurancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
 
   useEffect(() => {
     fetchData();
-  }, [id, router]);
+  }, [fetchData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
