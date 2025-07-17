@@ -5,11 +5,11 @@ import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
     const documentType = formData.get('documentType') as string || 'Verification Call';
@@ -30,7 +30,7 @@ export async function POST(
 
     // Upload all files to S3
     const uploadPromises = files.map(async (file) => {
-      const { url, originalFileName } = await uploadFileToS3(file, leadId, 'verification', 'health-insurance');
+      const { url, originalFileName } = await uploadFileToS3(file, id, 'verification', 'health-insurance');
       return {
         fileType: file.type.startsWith('video/') ? 'video' : 'audio',
         url,
@@ -41,7 +41,7 @@ export async function POST(
     const uploadedFiles = await Promise.all(uploadPromises);
 
     // Find existing verification record
-    const verification = await HealthInsuranceVerification.findOne({ leadId });
+    const verification = await (HealthInsuranceVerification as any).findOne({ leadId: id });
     
     if (!verification) {
       return NextResponse.json({ error: 'Verification record not found' }, { status: 404 });
@@ -90,13 +90,13 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
 
-    const verification = await HealthInsuranceVerification.findOne({ leadId });
+    const verification = await (HealthInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Health insurance verification not found' },

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import HealthInsurance from '@/models/HealthInsuranceVerification';
@@ -12,7 +11,7 @@ export async function GET(
   try {
     await connectDB();
     const { id } = await params;
-    const application = await HealthInsurance.findById(id)
+    const application = await (HealthInsurance as any).findById(id)
       .populate('leadId', 'name phoneNumber email');
 
     if (!application) {
@@ -34,11 +33,11 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const formData = await request.formData();
-    const id = params.id;
+    const { id } = await params;
 
     // Create base directory structure
     const baseDir = path.join(process.cwd(), 'public', 'uploads', 'health-insurance');
@@ -77,7 +76,7 @@ export async function PATCH(
     }
 
     await connectDB();
-    const application = await HealthInsurance.findByIdAndUpdate(
+    const application = await (HealthInsurance as any).findByIdAndUpdate(
       id,
       { 
         ...processedData,
@@ -105,11 +104,11 @@ export async function PATCH(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const formData = await request.formData();
-    const id = params.id;
+    const { id } = await params;
 
     // Create base directory structure
     const baseDir = path.join(process.cwd(), 'public', 'uploads', 'health-insurance');

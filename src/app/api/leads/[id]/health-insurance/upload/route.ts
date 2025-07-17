@@ -4,11 +4,11 @@ import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const category = formData.get('category') as string || 'docs';
@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const { url, originalFileName } = await uploadFileToS3(file, leadId, category as string, 'health-insurance');
+    const { url, originalFileName } = await uploadFileToS3(file, id, category as 'docs' | 'payment' | 'verification', 'health-insurance');
     
     return NextResponse.json({ 
       success: true, 

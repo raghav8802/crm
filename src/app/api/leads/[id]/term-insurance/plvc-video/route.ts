@@ -3,11 +3,11 @@ import dbConnect from '@/lib/db';
 import TermInsuranceVerification, { VerificationDocumentGroup } from '@/models/TermInsuranceVerification';
 import { uploadFileToS3 } from '@/utils/s3Upload';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await dbConnect();
 
   try {
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await req.formData();
     const files = formData.getAll('media') as File[];
     const type = formData.get('type') as 'plvc' | 'welcome' | 'sales';
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ success: false, message: 'Upload type not specified' }, { status: 400 });
     }
 
-    const verification = await TermInsuranceVerification.findOne({ leadId });
+    const verification = await (TermInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json({ success: false, message: 'Verification details not found' }, { status: 404 });
     }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const uploadedFiles = await Promise.all(
       files.map(async (file) => {
         const fileType = file.type.startsWith('video/') ? 'video' : 'audio';
-        const { url } = await uploadFileToS3(file, leadId, 'verification');
+        const { url } = await uploadFileToS3(file, id, 'verification');
         return {
           url,
           fileName: file.name,

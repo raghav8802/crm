@@ -14,6 +14,8 @@ const eslintConfig = [
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@next/next/no-invalid-route-export": "off",
     },
   },
 ];

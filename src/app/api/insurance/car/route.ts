@@ -6,7 +6,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const applications = await CarInsurance.find()
+    const applications = await (CarInsurance as any).find()
       .select('leadId status')
       .populate('leadId', 'name phoneNumber email')
       .sort({ createdAt: -1 });

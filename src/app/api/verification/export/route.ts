@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
 
     // Fetch leads and users for reference
     const [leads, users] = await Promise.all([
-      Lead.find({ _id: { $in: leadIds } }).lean(),
-      User.find({}).lean()
+      (Lead as any).find({ _id: { $in: leadIds } }).lean(),
+      (User as any).find({}).lean()
     ]);
 
     // Create a map for quick user lookup
@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
 
     // Fetch verification details for all insurance types
     const [termVerifications, healthVerifications, lifeVerifications, carVerifications] = await Promise.all([
-      TermInsuranceVerification.find({ leadId: { $in: leadIds } }).lean(),
-      HealthInsuranceVerification.find({ leadId: { $in: leadIds } }).lean(),
-      LifeInsuranceVerification.find({ leadId: { $in: leadIds } }).lean(),
-      CarInsuranceVerification.find({ leadId: { $in: leadIds } }).lean()
+      (TermInsuranceVerification as any).find({ leadId: { $in: leadIds } }).lean(),
+      (HealthInsuranceVerification as any).find({ leadId: { $in: leadIds } }).lean(),
+      (LifeInsuranceVerification as any).find({ leadId: { $in: leadIds } }).lean(),
+      (CarInsuranceVerification as any).find({ leadId: { $in: leadIds } }).lean()
     ]);
 
     // Create a map of verification data by leadId

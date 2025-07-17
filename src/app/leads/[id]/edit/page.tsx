@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LeadType } from '@/models/Lead';
 
-export default function EditLead({ params }: { params: { id: string } }) {
+export default function EditLead({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -17,6 +17,15 @@ export default function EditLead({ params }: { params: { id: string } }) {
     notes: [],
     thread: []
   });
+  const [leadId, setLeadId] = useState<string>('');
+
+  useEffect(() => {
+    const getParams = async () => {
+      const { id } = await params;
+      setLeadId(id);
+    };
+    getParams();
+  }, [params]);
 
   const sourceOptions = [
     { value: 'IVR', label: 'IVR' },
@@ -26,9 +35,11 @@ export default function EditLead({ params }: { params: { id: string } }) {
   ];
 
   useEffect(() => {
+    if (!leadId) return;
+    
     const fetchLead = async () => {
       try {
-        const res = await fetch(`/api/leads/${params.id}`);
+        const res = await fetch(`/api/leads/${leadId}`);
         if (!res.ok) {
           throw new Error('Failed to fetch lead');
         }
@@ -47,14 +58,14 @@ export default function EditLead({ params }: { params: { id: string } }) {
     };
 
     fetchLead();
-  }, [params.id]);
+  }, [leadId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/leads/${params.id}`, {
+      const res = await fetch(`/api/leads/${leadId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

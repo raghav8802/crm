@@ -5,11 +5,11 @@ import { uploadFileToS3 } from '@/utils/s3Upload';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await request.formData();
     
     const file = formData.get('file') as File;
@@ -48,7 +48,7 @@ export async function POST(
     }
 
     // Find the verification record
-    const verification = await LifeInsuranceVerification.findOne({ leadId });
+    const verification = await (LifeInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -58,7 +58,7 @@ export async function POST(
 
     // Upload file to S3
     const category = type === 'payment' ? 'payment' : 'payment';
-    const { url, originalFileName } = await uploadFileToS3(file, leadId, category, 'life-insurance');
+    const { url, originalFileName } = await uploadFileToS3(file, id, category, 'life-insurance');
 
     // Initialize paymentDocuments array if it doesn't exist
     if (!verification.paymentDocuments) {

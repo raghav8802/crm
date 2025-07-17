@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
     const { name, email, password, role } = await request.json();
 
     // Validate input
@@ -66,10 +66,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
     await connectDB();
 
     // Check if user exists

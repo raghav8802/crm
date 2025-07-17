@@ -3,10 +3,10 @@ import connectDB from '@/lib/db';
 import CarInsuranceVerification from '@/models/CarInsuranceVerification';
 import { uploadFileToS3 } from '@/utils/s3Upload';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await req.formData();
     const videoFile = formData.get('video') as File;
 
@@ -18,11 +18,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Upload video file
-    const { url } = await uploadFileToS3(videoFile, leadId, 'verification', 'car-insurance');
+    const { url } = await uploadFileToS3(videoFile, id, 'verification', 'car-insurance');
 
     // Update verification record with video path
-    const verification = await CarInsuranceVerification.findOneAndUpdate(
-      { leadId },
+    const verification = await (CarInsuranceVerification as any).findOneAndUpdate(
+      { leadId: id },
       { $set: { plvcVideo: url } },
       { new: true }
     );

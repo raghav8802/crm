@@ -6,11 +6,12 @@ import path from 'path';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const application = await TermInsuranceVerification.findById(params.id)
+    const { id } = await params;
+    const application = await (TermInsuranceVerification as any).findById(id)
       .populate('leadId', 'name phoneNumber email');
 
     if (!application) {
@@ -32,11 +33,11 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const formData = await request.formData();
-    const id = params.id;
+    const { id } = await params;
 
     // Create base directory structure
     const baseDir = path.join(process.cwd(), 'public', 'uploads', 'term-insurance');
@@ -75,7 +76,7 @@ export async function PATCH(
     }
 
       await connectDB();
-      const application = await TermInsuranceVerification.findByIdAndUpdate(
+      const application = await (TermInsuranceVerification as any).findByIdAndUpdate(
       id,
       { 
         ...processedData,
@@ -103,11 +104,11 @@ export async function PATCH(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const formData = await request.formData();
-    const id = params.id;
+    const { id } = await params;
 
     // Create base directory structure
     const baseDir = path.join(process.cwd(), 'public', 'uploads', 'term-insurance');

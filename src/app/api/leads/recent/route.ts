@@ -28,7 +28,7 @@ export async function GET() {
     // If admin, show last 5 leads from all users, otherwise show last 5 leads of logged-in user
     const query = isAdmin ? {} : { assignedTo: userId };
     
-    const recentLeads = await Lead.find(query)
+    const recentLeads = await (Lead as any).find(query)
       .sort({ createdAt: -1 })
       .limit(5)
       .select('name phoneNumber status assignedTo createdAt');

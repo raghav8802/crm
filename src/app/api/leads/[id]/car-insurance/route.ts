@@ -3,10 +3,10 @@ import connectDB from '@/lib/db';
 import CarInsuranceVerification from '@/models/CarInsuranceVerification';
 import { uploadFileToS3 } from '@/utils/s3Upload';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await req.formData();
 
     // Handle file uploads
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ];
 
     const verificationData: Record<string, string | boolean> = {
-      leadId,
+      leadId: id,
       status: 'submitted',
       insuranceType: 'car_insurance'
     };
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     for (const field of fileFields) {
       const file = formData.get(field) as File;
       if (file) {
-        const { url } = await uploadFileToS3(file, leadId, 'docs', 'car-insurance');
+        const { url } = await uploadFileToS3(file, id, 'docs', 'car-insurance');
         verificationData[field] = url;
       }
     }
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Create verification record
-    const verification = await CarInsuranceVerification.create(verificationData);
+    const verification = await (CarInsuranceVerification as any).create(verificationData);
 
     return NextResponse.json({ success: true, data: verification });
   } catch (error) {
@@ -57,12 +57,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
 
-    const verification = await CarInsuranceVerification.findOne({ leadId });
+    const verification = await (CarInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -80,10 +80,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const updateData = await req.json();
 
     const updateOps: Record<string, unknown> = {};
@@ -99,8 +99,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       updateOps.$set = fieldsToUpdate;
     }
 
-    const verification = await CarInsuranceVerification.findOneAndUpdate(
-      { leadId },
+    const verification = await (CarInsuranceVerification as any).findOneAndUpdate(
+      { leadId: id },
       updateOps,
       { new: true }
     );

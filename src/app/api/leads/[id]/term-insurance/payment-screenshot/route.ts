@@ -13,11 +13,11 @@ const s3Client = new S3Client({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await request.formData();
     
     const file = formData.get('screenshot') as File;
@@ -46,7 +46,7 @@ export async function POST(
     }
 
     // Find the verification record
-    const verification = await TermInsuranceVerification.findOne({ leadId });
+    const verification = await (TermInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -60,7 +60,7 @@ export async function POST(
     
     const timestamp = Date.now();
     const fileName = `${timestamp}-${file.name}`;
-    const key = `term-insurance/${leadId}/payment-screenshot/${fileName}`;
+    const key = `term-insurance/${id}/payment-screenshot/${fileName}`;
 
     await s3Client.send(new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,

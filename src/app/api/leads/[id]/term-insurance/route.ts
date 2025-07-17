@@ -4,23 +4,23 @@ import TermInsuranceVerification from '@/models/TermInsuranceVerification';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
 
     const data = await request.json();
-    const leadId = params.id;
+    const { id } = await params;
 
     // Create a new verification record with the structured data
     const verificationData = {
-      leadId,
+      leadId: id,
       status: 'submitted',
       insuranceType: 'term_insurance',
       ...data,
     };
 
-    const verification = await TermInsuranceVerification.create(verificationData);
+    const verification = await (TermInsuranceVerification as any).create(verificationData);
 
     return NextResponse.json({
       success: true,
@@ -38,13 +38,14 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
 
-    const verification = await TermInsuranceVerification.findOne({
-      leadId: params.id
+    const { id } = await params;
+    const verification = await (TermInsuranceVerification as any).findOne({
+      leadId: id
     });
 
     if (!verification) {
@@ -70,11 +71,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const updateData = await request.json();
 
     const updateOps: Record<string, unknown> = {};
@@ -93,8 +94,8 @@ export async function PUT(
       updateOps.$set = fieldsToUpdate;
     }
 
-    const verification = await TermInsuranceVerification.findOneAndUpdate(
-      { leadId },
+    const verification = await (TermInsuranceVerification as any).findOneAndUpdate(
+      { leadId: id },
       updateOps,
       { new: true }
     );

@@ -6,10 +6,11 @@ import path from 'path';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
+    const { id } = await params;
 
     const formData = await request.formData();
     const file = formData.get('screenshot') as File;
@@ -55,8 +56,8 @@ export async function POST(
     fs.writeFileSync(filepath, buffer);
 
     // Update verification document
-    const verification = await CarInsuranceVerification.findOneAndUpdate(
-      { leadId: params.id },
+    const verification = await (CarInsuranceVerification as any).findOneAndUpdate(
+      { leadId: id },
       {
         $set: {
           paymentScreenshot: `/uploads/car-insurance/payment-screenshots/${filename}`,

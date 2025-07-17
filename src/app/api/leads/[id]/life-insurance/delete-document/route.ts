@@ -4,11 +4,11 @@ import LifeInsuranceVerification from '@/models/LifeInsuranceVerification';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const documentType = searchParams.get('documentType') as 'Payment Screenshot' | 'BI File';
     const fileIndex = parseInt(searchParams.get('fileIndex') || '0');
@@ -21,7 +21,7 @@ export async function DELETE(
     }
 
     // Find the verification record
-    const verification = await LifeInsuranceVerification.findOne({ leadId });
+    const verification = await (LifeInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -64,17 +64,9 @@ export async function DELETE(
       verification.paymentDocuments.splice(documentGroupIndex, 1);
     }
 
-    // Mark as modified to ensure save
-    verification.markModified('paymentDocuments');
-
-    // Save the updated verification
     await verification.save();
 
-    return NextResponse.json({
-      success: true,
-      data: verification
-    });
-
+    return NextResponse.json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Error deleting document:', error);
     return NextResponse.json(

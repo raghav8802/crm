@@ -11,10 +11,10 @@ export async function GET() {
 
     // Fetch verification details from all insurance types
     const [termVerifications, healthVerifications, lifeVerifications, carVerifications] = await Promise.all([
-      TermInsuranceVerification.find({}).lean(),
-      HealthInsuranceVerification.find({}).lean(),
-      LifeInsuranceVerification.find({}).lean(),
-      CarInsuranceVerification.find({}).lean()
+      (TermInsuranceVerification as any).find({}).lean(),
+      (HealthInsuranceVerification as any).find({}).lean(),
+      (LifeInsuranceVerification as any).find({}).lean(),
+      (CarInsuranceVerification as any).find({}).lean()
     ]);
 
     // Combine all verifications into a single array

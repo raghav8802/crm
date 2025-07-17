@@ -45,9 +45,9 @@ export async function POST(req: Request) {
     return NextResponse.json(lead, { status: 201 });
   } catch (error: unknown) {
     console.error('Error creating lead:', error);
-    if (error.name === 'ValidationError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ValidationError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: (error as any).errors },
         { status: 400 }
       );
     }
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
       query.status = status;
     }
     
-    const leads = await Lead.find(query).sort({ createdAt: -1 });
+    const leads = await (Lead as any).find(query).sort({ createdAt: -1 });
     return NextResponse.json(leads);
   } catch (error) {
     console.error('Error fetching leads:', error);

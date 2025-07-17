@@ -13,15 +13,15 @@ const s3Client = new S3Client({
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const { documentType, fileIndex } = await request.json();
 
     // Find the verification record
-    const verification = await TermInsuranceVerification.findOne({ leadId });
+    const verification = await (TermInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -64,27 +64,20 @@ export async function DELETE(
     // Remove the file from the array
     documentGroup.files.splice(fileIndex, 1);
 
-    // If no files left in the group, remove the entire group
+    // If no files remain in the group, remove the entire group
     if (documentGroup.files.length === 0) {
       if (documentType === 'Payment Screenshot' || documentType === 'BI File') {
-        verification.paymentDocuments = verification.paymentDocuments?.filter(
-          (doc: Record<string, unknown>) => doc.documentType !== documentType
-        ) || [];
+        const index = verification.paymentDocuments.findIndex((doc: Record<string, unknown>) => doc.documentType === documentType);
+        verification.paymentDocuments.splice(index, 1);
       } else {
-        verification.documents = verification.documents?.filter(
-          (doc: Record<string, unknown>) => doc.documentType !== documentType
-        ) || [];
+        const index = verification.documents.findIndex((doc: Record<string, unknown>) => doc.documentType === documentType);
+        verification.documents.splice(index, 1);
       }
     }
 
-    // Save the updated verification
     await verification.save();
 
-    return NextResponse.json({
-      success: true,
-      data: verification
-    });
-
+    return NextResponse.json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Error deleting document:', error);
     return NextResponse.json(

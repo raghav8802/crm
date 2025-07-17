@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
-import { TermInsurance } from '@/models/TermInsuranceVerification';
+import TermInsuranceVerification from '@/models/TermInsuranceVerification';
 
 export async function GET() {
   try {
     await connectDB();
 
-    const applications = await TermInsurance.find()
+    const applications = await (TermInsuranceVerification as any).find()
       .select('leadId status')
       .populate('leadId', 'name phoneNumber email')
       .sort({ createdAt: -1 });

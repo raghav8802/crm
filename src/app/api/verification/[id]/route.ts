@@ -5,17 +5,17 @@ import HealthInsuranceVerification from '@/models/HealthInsuranceVerification';
 import CarInsuranceVerification from '@/models/CarInsuranceVerification';
 import LifeInsuranceVerification from '@/models/LifeInsuranceVerification';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
 
     // Try to find verification in each insurance type
     const [termVerification, healthVerification, carVerification, lifeVerification] = await Promise.all([
-      TermInsuranceVerification.findOne({ leadId }),
-      HealthInsuranceVerification.findOne({ leadId }),
-      CarInsuranceVerification.findOne({ leadId }),
-      LifeInsuranceVerification.findOne({ leadId })
+      (TermInsuranceVerification as any).findOne({ leadId: id }),
+      (HealthInsuranceVerification as any).findOne({ leadId: id }),
+      (CarInsuranceVerification as any).findOne({ leadId: id }),
+      (LifeInsuranceVerification as any).findOne({ leadId: id })
     ]);
 
     // Return the first verification found

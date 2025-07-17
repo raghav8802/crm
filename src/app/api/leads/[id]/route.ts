@@ -4,25 +4,19 @@ import { Lead } from '@/models/Lead';
 import mongoose from 'mongoose';
 import { LeadThread } from '@/models/LeadThread';
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(request: Request, props: Props) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const id = props.params.id;
+    const { id } = await params;
     
-    const lead = await Lead.findById(id);
+    const lead = await (Lead as any).findById(id);
     
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Fetch thread entries for this lead
-    const threadEntries = await LeadThread.find({ leadId: id }).sort({ timestamp: -1 });
+    const threadEntries = await (LeadThread as any).find({ leadId: id }).sort({ timestamp: -1 });
     
     return NextResponse.json({
       ...lead.toObject(),
@@ -34,10 +28,10 @@ export async function GET(request: Request, props: Props) {
   }
 }
 
-export async function DELETE(request: NextRequest, props: Props) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const id = props.params.id;
+    const { id } = await params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -46,17 +40,17 @@ export async function DELETE(request: NextRequest, props: Props) {
       );
     }
 
-    const lead = await Lead.findById(id);
+    const lead = await (Lead as any).findById(id);
     
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Delete all thread entries for this lead
-    await LeadThread.deleteMany({ leadId: id });
+    await (LeadThread as any).deleteMany({ leadId: id });
     
     // Delete the lead
-    await Lead.findByIdAndDelete(id);
+    await (Lead as any).findByIdAndDelete(id);
     
     return NextResponse.json({ message: 'Lead and associated threads deleted successfully' });
   } catch (error) {
@@ -68,10 +62,10 @@ export async function DELETE(request: NextRequest, props: Props) {
   }
 }
 
-export async function PUT(request: NextRequest, props: Props) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const id = props.params.id;
+    const { id } = await params;
     const body = await request.json();
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -82,13 +76,13 @@ export async function PUT(request: NextRequest, props: Props) {
     }
 
     // Get the current lead to compare changes
-    const currentLead = await Lead.findById(id);
+    const currentLead = await (Lead as any).findById(id);
     if (!currentLead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     // Update the lead with new data
-    const updatedLead = await Lead.findByIdAndUpdate(
+    const updatedLead = await (Lead as any).findByIdAndUpdate(
       id,
       { ...body, updatedAt: new Date() },
       { new: true }

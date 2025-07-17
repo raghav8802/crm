@@ -1,9 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ReminderType } from '@/models/Reminder';
 
-interface PopulatedReminder extends Omit<ReminderType, 'leadId'> {
+interface ReminderType {
+  _id: string;
+  leadId: {
+    name: string;
+    phoneNumber: string;
+    status: string;
+  };
+  scheduledTime: string;
+  status: string;
+}
+
+interface PopulatedReminder extends ReminderType {
   _id: string;
   leadId: {
     name: string;

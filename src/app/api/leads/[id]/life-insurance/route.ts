@@ -20,10 +20,10 @@ const laDocTypes = [
   { field: 'laOtherDocument', documentType: 'Other' },
 ];
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const formData = await req.formData();
 
     // Prepare document arrays
@@ -40,21 +40,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         docGroup = { documentType, files: [] };
         arr.push(docGroup);
       }
-      docGroup.files.push({ url, fileName: originalFileName });
+      (docGroup.files as any[]).push({ url, fileName: originalFileName });
     };
 
     // Proposer Documents
     for (const { field, documentType } of proposerDocTypes) {
       const file = formData.get(field) as File;
       if (file) {
-        await addFileToDocArray(proposerDocuments, documentType, file, leadId, 'docs');
+        await addFileToDocArray(proposerDocuments, documentType, file, id, 'docs');
       }
     }
     // LA Documents
     for (const { field, documentType } of laDocTypes) {
       const file = formData.get(field) as File;
       if (file) {
-        await addFileToDocArray(laDocuments, documentType, file, leadId, 'docs');
+        await addFileToDocArray(laDocuments, documentType, file, id, 'docs');
       }
     }
 
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Collect other fields
     const verificationData: Record<string, unknown> = {
-      leadId,
+      leadId: id,
       status: 'submitted',
       insuranceType: 'life_insurance',
       documents: {
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Create verification record
-    const verification = await LifeInsuranceVerification.create(verificationData);
+    const verification = await (LifeInsuranceVerification as any).create(verificationData);
 
     return NextResponse.json({ success: true, data: verification });
   } catch (error) {
@@ -96,12 +96,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
 
-    const verification = await LifeInsuranceVerification.findOne({ leadId });
+    const verification = await (LifeInsuranceVerification as any).findOne({ leadId: id });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -119,16 +119,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
+    const { id } = await params;
     const updateData = await req.json();
 
     // No file upload handling for JSON body
     // Directly update the document with the received JSON
-    const verification = await LifeInsuranceVerification.findOneAndUpdate(
-      { leadId },
+    const verification = await (LifeInsuranceVerification as any).findOneAndUpdate(
+      { leadId: id },
       { $set: updateData },
       { new: true }
     );

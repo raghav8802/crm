@@ -3,68 +3,41 @@ import connectDB from '@/lib/db';
 import HealthInsuranceVerification from '@/models/HealthInsuranceVerification';
 import { uploadFileToS3 } from '@/utils/s3Upload';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const leadId = params.id;
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const { id } = await params;
+    const formData = await req.formData();
+    const biFile = formData.get('biDocument') as File;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    if (!biFile) {
+      return NextResponse.json(
+        { error: 'No BI document file provided' },
+        { status: 400 }
+      );
     }
 
-    // Upload file to S3
-    const { url, originalFileName } = await uploadFileToS3(file, leadId, 'payment', 'health-insurance');
+    // Upload BI document file
+    const { url } = await uploadFileToS3(biFile, id, 'docs' as any, 'health-insurance');
 
-    // Find existing verification record
-    const verification = await HealthInsuranceVerification.findOne({ leadId });
-    
+    // Update verification record with BI document path
+    const verification = await (HealthInsuranceVerification as any).findOneAndUpdate(
+      { leadId: id },
+      { $set: { biDocument: url } },
+      { new: true }
+    );
+
     if (!verification) {
-      return NextResponse.json({ error: 'Verification record not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Verification not found' },
+        { status: 404 }
+      );
     }
 
-    // Initialize paymentDocuments array if it doesn't exist
-    if (!verification.paymentDocuments) {
-      verification.paymentDocuments = [];
-    }
-
-    // Find existing BI File document or create new one
-    const biDocument = verification.paymentDocuments.find((doc: { documentType: string }) => doc.documentType === 'BI File');
-    
-    if (biDocument) {
-      // Update existing BI File document
-      biDocument.files.push({
-        url,
-        fileName: originalFileName
-      });
-    } else {
-      // Create new BI File document
-      verification.paymentDocuments.push({
-        documentType: 'BI File',
-        files: [{
-          url,
-          fileName: originalFileName
-        }]
-      });
-    }
-
-    // Update status to payment_done if not already
-    if (verification.status === 'link_created') {
-      verification.status = 'payment_done';
-    }
-
-    await verification.save();
-
-    return NextResponse.json({
-      success: true,
-      data: verification,
-      message: 'BI document uploaded successfully'
+    return NextResponse.json({ 
+      success: true, 
+      biDocumentUrl: url 
     });
-
   } catch (error) {
     console.error('Error uploading BI document:', error);
     return NextResponse.json(
