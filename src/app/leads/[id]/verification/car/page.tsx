@@ -158,13 +158,17 @@ export default function CarInsuranceVerificationPage() {
     if (!e.target.files || !e.target.files[0]) return;
     
     const file = e.target.files[0];
-    if (file.type !== 'video/mp4' && file.type !== 'video/quicktime') {
-      alert('Please upload only MP4 or MOV video files');
+    // Allow video and audio files
+    const allowedVideoTypes = ['video/mp4', 'video/quicktime', 'video/avi', 'video/mov'];
+    const allowedAudioTypes = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/aac', 'audio/ogg'];
+    
+    if (!allowedVideoTypes.includes(file.type) && !allowedAudioTypes.includes(file.type)) {
+      alert('Please upload only MP4, MOV, AVI video files or MP3, WAV, M4A, AAC, OGG audio files');
       return;
     }
 
     if (file.size > 100 * 1024 * 1024) { // 100MB limit
-      alert('Video file size should be less than 100MB');
+      alert('File size should be less than 100MB');
       return;
     }
 
@@ -178,14 +182,14 @@ export default function CarInsuranceVerificationPage() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error('Failed to upload video');
+      if (!res.ok) throw new Error('Failed to upload file');
       
       const data = await res.json();
       if (editData) {
         setEditData({ ...editData, plvcVideo: data.videoUrl });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload video');
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
     } finally {
       setIsSaving(false);
     }
@@ -288,21 +292,32 @@ export default function CarInsuranceVerificationPage() {
 
     return (
       <div className="mt-6 border-t pt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">PLVC Verification Video</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">PLVC Verification Media</h3>
         {verification.plvcVideo ? (
           <div className="space-y-4">
             <div className="bg-gray-50 rounded-lg p-4">
-              <video 
-                controls 
-                className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
-                src={verification.plvcVideo}
-              >
-                Your browser does not support the video tag.
-              </video>
+              {/* Check if it's a video or audio file */}
+              {verification.plvcVideo.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                <video 
+                  controls 
+                  className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
+                  src={verification.plvcVideo}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <audio 
+                  controls 
+                  className="w-full max-w-3xl mx-auto rounded-lg shadow-lg"
+                  src={verification.plvcVideo}
+                >
+                  Your browser does not support the audio tag.
+                </audio>
+              )}
             </div>
             <div className="flex items-center justify-between max-w-3xl mx-auto">
               <p className="text-sm text-gray-500">
-                Video uploaded successfully
+                Media file uploaded successfully
               </p>
               <button
                 onClick={() => window.open(verification.plvcVideo, '_blank')}
@@ -311,7 +326,7 @@ export default function CarInsuranceVerificationPage() {
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Open Video
+                Open Media
               </button>
             </div>
           </div>
@@ -320,12 +335,12 @@ export default function CarInsuranceVerificationPage() {
             <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
               <div className="text-center">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-2 2v14a1 1 0 001 1z" />
                 </svg>
                 <div className="mt-4">
                   <input
                     type="file"
-                    accept="video/mp4,video/quicktime"
+                    accept="video/mp4,video/quicktime,video/avi,video/mov,audio/mp3,audio/wav,audio/m4a,audio/aac,audio/ogg"
                     onChange={handleVideoUpload}
                     className="block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
@@ -336,7 +351,7 @@ export default function CarInsuranceVerificationPage() {
                   />
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  Upload MP4 or MOV video file (max 100MB)
+                  Upload video (MP4, MOV, AVI) or audio (MP3, WAV, M4A, AAC, OGG) file (max 100MB)
                 </p>
               </div>
             </div>
