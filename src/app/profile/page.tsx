@@ -68,6 +68,14 @@ export default function ProfilePage() {
     return () => clearInterval(timer);
   }, []);
 
+  // Handle video element when camera is active
+  useEffect(() => {
+    if (showCamera && videoRef && cameraStream) {
+      videoRef.srcObject = cameraStream;
+      videoRef.play().catch(err => console.error('Error playing video:', err));
+    }
+  }, [showCamera, videoRef, cameraStream]);
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -189,6 +197,7 @@ export default function ProfilePage() {
   // Camera functions
   const startCamera = async () => {
     try {
+      console.log('Starting camera...');
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'user',
@@ -196,14 +205,13 @@ export default function ProfilePage() {
           height: { ideal: 480 }
         } 
       });
+      console.log('Camera stream obtained:', stream);
       setCameraStream(stream);
       setShowCamera(true);
-      if (videoRef) {
-        videoRef.srcObject = stream;
-      }
+      setError(null); // Clear any previous errors
     } catch (error) {
       console.error('Error accessing camera:', error);
-      setError('Unable to access camera. Please check permissions.');
+      setError('Unable to access camera. Please check permissions and ensure camera is not in use by another application.');
     }
   };
 
@@ -594,7 +602,13 @@ export default function ProfilePage() {
                               ref={(el) => setVideoRef(el)}
                               autoPlay
                               playsInline
+                              muted
                               className="w-full max-w-md h-auto"
+                              onLoadedMetadata={() => {
+                                if (videoRef) {
+                                  videoRef.play().catch(err => console.error('Error playing video:', err));
+                                }
+                              }}
                             />
                             <canvas
                               ref={(el) => setCanvasRef(el)}
