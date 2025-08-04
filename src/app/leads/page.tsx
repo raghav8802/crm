@@ -75,9 +75,8 @@ export default function LeadsPage() {
 
   useEffect(() => {
     fetchCurrentUser();
-    fetchLeads();
     fetchUsers();
-  }, [fetchCurrentUser, fetchLeads, fetchUsers]);
+  }, []);
 
   // Set selected user when currentUser changes
   useEffect(() => {
@@ -91,7 +90,7 @@ export default function LeadsPage() {
     if (currentUser) {
       fetchLeads();
     }
-  }, [currentUser, fetchLeads]);
+  }, [currentUser]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this lead?')) {
