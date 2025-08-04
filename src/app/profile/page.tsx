@@ -184,20 +184,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
 
-      if (response.ok) {
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
 
   // Camera functions
   const startCamera = async () => {
@@ -639,6 +626,7 @@ export default function ProfilePage() {
                               src={capturedPhoto}
                               alt="Captured photo"
                               className="w-full max-w-md h-auto rounded-lg border-2 border-gray-200"
+                              loading="lazy"
                             />
                           </div>
                           <div className="flex space-x-4">
@@ -727,6 +715,7 @@ export default function ProfilePage() {
                               src={capturedPhoto}
                               alt="Captured photo"
                               className="w-full max-w-md h-auto rounded-lg border-2 border-gray-200"
+                              loading="lazy"
                             />
                           </div>
                           <div className="flex space-x-4">
