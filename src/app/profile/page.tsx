@@ -227,16 +227,25 @@ export default function ProfilePage() {
   const capturePhoto = () => {
     if (videoRef && canvasRef) {
       setIsCapturing(true);
+      console.log('Capturing photo...');
+      
       const context = canvasRef.getContext('2d');
-      if (context) {
+      if (context && videoRef.videoWidth > 0 && videoRef.videoHeight > 0) {
         canvasRef.width = videoRef.videoWidth;
         canvasRef.height = videoRef.videoHeight;
         context.drawImage(videoRef, 0, 0);
         const photoData = canvasRef.toDataURL('image/jpeg', 0.8);
+        console.log('Photo captured, size:', photoData.length);
         setCapturedPhoto(photoData);
         stopCamera();
+      } else {
+        console.error('Video not ready or canvas context not available');
+        setError('Camera not ready. Please try again.');
       }
       setIsCapturing(false);
+    } else {
+      console.error('Video or canvas ref not available');
+      setError('Camera not ready. Please try again.');
     }
   };
 
@@ -254,6 +263,7 @@ export default function ProfilePage() {
     try {
       setIsLoadingAttendance(true);
       setError(null);
+      console.log('Sending check-in request with photo...');
 
       const response = await fetch('/api/attendance/check-in', {
         method: 'POST',
@@ -264,19 +274,23 @@ export default function ProfilePage() {
         body: JSON.stringify({ photo: capturedPhoto }),
       });
 
+      console.log('Check-in response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Check-in successful:', data);
         setTodayAttendance(data.attendance);
         setSuccess('Check-in successful!');
         setCapturedPhoto(null);
         await fetchAttendanceData();
       } else {
         const errorData = await response.json();
+        console.error('Check-in failed:', errorData);
         setError(errorData.message || 'Failed to check in');
       }
     } catch (error) {
       console.error('Error checking in:', error);
-      setError('Failed to check in');
+      setError('Failed to check in. Please try again.');
     } finally {
       setIsLoadingAttendance(false);
     }

@@ -19,31 +19,38 @@ const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', ne
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Check-in API called');
     await connectToDatabase();
 
     // Get token from cookies
     const token = request.cookies.get('token')?.value;
     if (!token) {
+      console.log('No token provided');
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     const userId = decoded.userId;
+    console.log('User ID:', userId);
 
     // Get request body
     const body = await request.json();
     const { photo } = body;
+    console.log('Photo received, size:', photo ? photo.length : 0);
 
     if (!photo) {
+      console.log('No photo provided');
       return NextResponse.json({ error: 'Photo is required' }, { status: 400 });
     }
 
     // Check if attendance already exists for today
     const today = new Date().toISOString().split('T')[0];
+    console.log('Checking for existing attendance on:', today);
     const existingAttendance = await Attendance.findOne({ userId, date: today });
 
     if (existingAttendance) {
+      console.log('Attendance already exists for today');
       return NextResponse.json({ error: 'Attendance already recorded for today' }, { status: 400 });
     }
 
@@ -60,6 +67,8 @@ export async function POST(request: NextRequest) {
       hour12: false
     });
 
+    console.log('Creating attendance record:', { userId, date: today, checkIn: checkInTime, status });
+
     // Create new attendance record
     const attendance = new Attendance({
       userId,
@@ -70,6 +79,7 @@ export async function POST(request: NextRequest) {
     });
 
     await attendance.save();
+    console.log('Attendance saved successfully');
 
     return NextResponse.json({ 
       message: 'Check-in successful',
