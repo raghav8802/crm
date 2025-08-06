@@ -11,6 +11,50 @@ const s3Client = new S3Client({
 });
 
 /**
+ * Upload attendance photo to S3 with user folder structure
+ * @param photoData Base64 photo data
+ * @param userId User ID
+ * @param userName User's name for folder structure
+ * @param type 'check-in' or 'check-out'
+ * @returns Promise with uploaded file URL and key
+ */
+export const uploadAttendancePhotoToS3 = async (
+  photoData: string,
+  userId: string,
+  userName: string,
+  type: 'check-in' | 'check-out'
+) => {
+  try {
+    // Remove data URL prefix to get base64 data
+    const base64Data = photoData.replace(/^data:image\/[a-z]+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    // Create unique filename with timestamp
+    const timestamp = Date.now();
+    const fileName = `${type}-${timestamp}.jpg`;
+    
+    // Create folder structure: attendance/{userName}/{userId}/{filename}
+    const key = `attendance/${userName.replace(/\s+/g, '-').toLowerCase()}/${userId}/${fileName}`;
+    
+    const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME!,
+      Key: key,
+      Body: buffer,
+      ContentType: 'image/jpeg',
+    });
+
+    await s3Client.send(command);
+
+    return { url: publicUrl, key, fileName };
+  } catch (error) {
+    console.error('Error uploading attendance photo to S3:', error);
+    throw new Error('Failed to upload attendance photo to S3.');
+  }
+};
+
+/**
  * A reusable utility to upload files to an S3 bucket with an organized structure.
  * @param file The file to upload.
  * @param leadId The ID of the lead to associate the file with.

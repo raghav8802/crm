@@ -20,6 +20,8 @@ interface AttendanceRecord {
   checkOut?: string;
   totalHours?: number;
   status: 'present' | 'absent' | 'late';
+  checkInPhoto?: string;
+  checkOutPhoto?: string;
   createdAt: string;
 }
 
@@ -592,6 +594,11 @@ export default function ProfilePage() {
                       <div className="text-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Take Attendance Photo</h3>
                         <p className="text-gray-600 text-sm">Please take a selfie to mark your attendance</p>
+                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-xs text-blue-700">
+                            <strong>Note:</strong> Check-ins after 10:00 AM will be marked as "Late"
+                          </p>
+                        </div>
                       </div>
                       
                       {!showCamera && !capturedPhoto && (
@@ -682,16 +689,38 @@ export default function ProfilePage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="text-center">
                           <div className="text-sm text-gray-600 mb-2 font-medium">Check In</div>
-                          <div className="text-lg font-bold text-green-600 bg-white px-4 py-2 rounded-lg shadow-sm">
+                          <div className="text-lg font-bold text-green-600 bg-white px-4 py-2 rounded-lg shadow-sm mb-3">
                             {todayAttendance.checkIn}
                           </div>
+                          {todayAttendance.checkInPhoto && (
+                            <div className="mb-3">
+                              <img
+                                src={todayAttendance.checkInPhoto}
+                                alt="Check-in photo"
+                                className="w-32 h-32 object-cover rounded-lg border-2 border-green-200 mx-auto"
+                                loading="lazy"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Check-in Photo</p>
+                            </div>
+                          )}
                         </div>
                         {todayAttendance.checkOut && (
                           <div className="text-center">
                             <div className="text-sm text-gray-600 mb-2 font-medium">Check Out</div>
-                            <div className="text-lg font-bold text-red-600 bg-white px-4 py-2 rounded-lg shadow-sm">
+                            <div className="text-lg font-bold text-red-600 bg-white px-4 py-2 rounded-lg shadow-sm mb-3">
                               {todayAttendance.checkOut}
                             </div>
+                            {todayAttendance.checkOutPhoto && (
+                              <div className="mb-3">
+                                <img
+                                  src={todayAttendance.checkOutPhoto}
+                                  alt="Check-out photo"
+                                  className="w-32 h-32 object-cover rounded-lg border-2 border-red-200 mx-auto"
+                                  loading="lazy"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Check-out Photo</p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -795,6 +824,7 @@ export default function ProfilePage() {
                               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
                               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
                               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
@@ -820,6 +850,37 @@ export default function ProfilePage() {
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
                                     {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                                   </span>
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  <div className="flex space-x-1">
+                                    {record.checkInPhoto && (
+                                      <button
+                                        onClick={() => window.open(record.checkInPhoto, '_blank')}
+                                        className="w-6 h-6 bg-green-100 hover:bg-green-200 rounded-full flex items-center justify-center"
+                                        title="View Check-in Photo"
+                                      >
+                                        <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                    {record.checkOutPhoto && (
+                                      <button
+                                        onClick={() => window.open(record.checkOutPhoto, '_blank')}
+                                        className="w-6 h-6 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
+                                        title="View Check-out Photo"
+                                      >
+                                        <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                    {!record.checkInPhoto && !record.checkOutPhoto && (
+                                      <span className="text-gray-400 text-xs">No photos</span>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             ))}

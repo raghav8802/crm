@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import  connectToDatabase  from '@/lib/db';
+import connectToDatabase from '@/lib/db';
+import { uploadAttendancePhotoToS3 } from '@/utils/s3Upload';
 
 // Import the Attendance model
 const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', new mongoose.Schema({
@@ -15,6 +16,15 @@ const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', ne
   checkOutPhoto: { type: String },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
+}, { timestamps: true })) as any;
+
+// Import User model to get user name
+const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  role: { type: String, required: true },
+  phone: { type: String },
+  createdAt: { type: Date, default: Date.now }
 }, { timestamps: true })) as any;
 
 export async function POST(request: NextRequest) {
@@ -33,6 +43,13 @@ export async function POST(request: NextRequest) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     const userId = decoded.userId;
     console.log('User ID:', userId);
+
+    // Get user details for folder structure
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('User not found');
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     // Get request body
     const body = await request.json();
@@ -54,10 +71,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Attendance already recorded for today' }, { status: 400 });
     }
 
-    // Determine status based on time (9:30 AM cutoff)
+    // Upload photo to S3
+    console.log('Uploading photo to S3...');
+    const uploadResult = await uploadAttendancePhotoToS3(
+      photo,
+      userId,
+      user.name,
+      'check-in'
+    );
+    console.log('Photo uploaded to S3:', uploadResult.url);
+
+    // Determine status based on time (10:00 AM cutoff)
     const now = new Date();
     const cutoffTime = new Date();
-    cutoffTime.setHours(9, 30, 0, 0);
+    cutoffTime.setHours(10, 0, 0, 0); // 10:00 AM cutoff
     
     const status = now > cutoffTime ? 'late' : 'present';
     const checkInTime = now.toLocaleTimeString('en-US', {
@@ -67,7 +94,13 @@ export async function POST(request: NextRequest) {
       hour12: false
     });
 
-    console.log('Creating attendance record:', { userId, date: today, checkIn: checkInTime, status });
+    console.log('Creating attendance record:', { 
+      userId, 
+      date: today, 
+      checkIn: checkInTime, 
+      status,
+      photoUrl: uploadResult.url 
+    });
 
     // Create new attendance record
     const attendance = new Attendance({
@@ -75,7 +108,7 @@ export async function POST(request: NextRequest) {
       date: today,
       checkIn: checkInTime,
       status,
-      checkInPhoto: photo
+      checkInPhoto: uploadResult.url
     });
 
     await attendance.save();
@@ -91,6 +124,7 @@ export async function POST(request: NextRequest) {
         checkOut: attendance.checkOut,
         totalHours: attendance.totalHours,
         status: attendance.status,
+        checkInPhoto: attendance.checkInPhoto,
         createdAt: attendance.createdAt
       }
     });

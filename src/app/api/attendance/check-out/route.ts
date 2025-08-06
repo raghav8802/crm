@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import  connectToDatabase  from '@/lib/db';
+import connectToDatabase from '@/lib/db';
+import { uploadAttendancePhotoToS3 } from '@/utils/s3Upload';
 
 // Import the Attendance model
 const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', new mongoose.Schema({
@@ -17,8 +18,18 @@ const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', ne
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true })) as any;
 
+// Import User model to get user name
+const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  role: { type: String, required: true },
+  phone: { type: String },
+  createdAt: { type: Date, default: Date.now }
+}, { timestamps: true })) as any;
+
 export async function POST(request: NextRequest) {
   try {
+    console.log('Check-out API called');
     await connectToDatabase();
 
     // Get token from cookies
@@ -30,6 +41,13 @@ export async function POST(request: NextRequest) {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     const userId = decoded.userId;
+
+    // Get user details for folder structure
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('User not found');
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     // Get request body
     const body = await request.json();
@@ -51,6 +69,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Already checked out today' }, { status: 400 });
     }
 
+    // Upload photo to S3
+    console.log('Uploading check-out photo to S3...');
+    const uploadResult = await uploadAttendancePhotoToS3(
+      photo,
+      userId,
+      user.name,
+      'check-out'
+    );
+    console.log('Check-out photo uploaded to S3:', uploadResult.url);
+
     // Calculate check-out time and total hours
     const now = new Date();
     const checkOutTime = now.toLocaleTimeString('en-US', {
@@ -71,10 +99,11 @@ export async function POST(request: NextRequest) {
     // Update attendance record
     attendance.checkOut = checkOutTime;
     attendance.totalHours = Math.round(totalHours * 100) / 100; // Round to 2 decimal places
-    attendance.checkOutPhoto = photo;
+    attendance.checkOutPhoto = uploadResult.url;
     attendance.updatedAt = new Date();
 
     await attendance.save();
+    console.log('Check-out attendance updated successfully');
 
     return NextResponse.json({ 
       message: 'Check-out successful',
@@ -86,6 +115,8 @@ export async function POST(request: NextRequest) {
         checkOut: attendance.checkOut,
         totalHours: attendance.totalHours,
         status: attendance.status,
+        checkInPhoto: attendance.checkInPhoto,
+        checkOutPhoto: attendance.checkOutPhoto,
         createdAt: attendance.createdAt
       }
     });
