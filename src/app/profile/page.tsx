@@ -131,6 +131,8 @@ export default function ProfilePage() {
       
       if (todayResponse.ok) {
         const todayData = await todayResponse.json();
+        console.log('Today attendance data:', todayData);
+        console.log('Today attendance:', todayData.attendance);
         setTodayAttendance(todayData.attendance || null);
       }
 
@@ -141,6 +143,7 @@ export default function ProfilePage() {
       
       if (historyResponse.ok) {
         const historyData = await historyResponse.json();
+        console.log('Attendance history data:', historyData);
         setAttendanceRecords(historyData.records || []);
       }
     } catch (error) {
@@ -258,15 +261,18 @@ export default function ProfilePage() {
   };
 
   const handleCheckIn = async () => {
-    if (!capturedPhoto) {
-      setError('Please take a photo to mark attendance');
-      return;
-    }
-
     try {
       setIsLoadingAttendance(true);
       setError(null);
-      console.log('Sending check-in request with photo...');
+      console.log('Sending check-in request...');
+
+      const requestBody: any = {};
+      if (capturedPhoto) {
+        requestBody.photo = capturedPhoto;
+        console.log('Photo included in request, size:', capturedPhoto.length);
+      } else {
+        console.log('No photo captured, sending request without photo');
+      }
 
       const response = await fetch('/api/attendance/check-in', {
         method: 'POST',
@@ -274,7 +280,7 @@ export default function ProfilePage() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ photo: capturedPhoto }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log('Check-in response status:', response.status);
@@ -283,7 +289,13 @@ export default function ProfilePage() {
         const data = await response.json();
         console.log('Check-in successful:', data);
         setTodayAttendance(data.attendance);
-        setSuccess('Check-in successful!');
+        
+        if (data.photoUploadError) {
+          setSuccess(`Check-in successful! ${data.photoUploadError}`);
+        } else {
+          setSuccess('Check-in successful!');
+        }
+        
         setCapturedPhoto(null);
         await fetchAttendanceData();
       } else {
@@ -300,14 +312,17 @@ export default function ProfilePage() {
   };
 
   const handleCheckOut = async () => {
-    if (!capturedPhoto) {
-      setError('Please take a photo to mark attendance');
-      return;
-    }
-
     try {
       setIsLoadingAttendance(true);
       setError(null);
+
+      const requestBody: any = {};
+      if (capturedPhoto) {
+        requestBody.photo = capturedPhoto;
+        console.log('Photo included in check-out request, size:', capturedPhoto.length);
+      } else {
+        console.log('No photo captured, sending check-out request without photo');
+      }
 
       const response = await fetch('/api/attendance/check-out', {
         method: 'POST',
@@ -315,17 +330,30 @@ export default function ProfilePage() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ photo: capturedPhoto }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('Check-out response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Check-out response data:', data);
+        console.log('Attendance data:', data.attendance);
+        console.log('Check-out time:', data.attendance?.checkOut);
+        
         setTodayAttendance(data.attendance);
-        setSuccess('Check-out successful!');
+        
+        if (data.photoUploadError) {
+          setSuccess(`Check-out successful! ${data.photoUploadError}`);
+        } else {
+          setSuccess('Check-out successful!');
+        }
+        
         setCapturedPhoto(null);
         await fetchAttendanceData();
       } else {
         const errorData = await response.json();
+        console.error('Check-out failed:', errorData);
         setError(errorData.message || 'Failed to check out');
       }
     } catch (error) {
@@ -603,7 +631,7 @@ export default function ProfilePage() {
                       </div>
                       
                       {!showCamera && !capturedPhoto && (
-                        <div className="flex justify-center">
+                        <div className="flex flex-col items-center space-y-4">
                           <button
                             onClick={startCamera}
                             className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 font-medium shadow-lg"
@@ -612,8 +640,20 @@ export default function ProfilePage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            Open Camera
+                            Take Photo
                           </button>
+                          
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-2">or</p>
+                            <button
+                              onClick={handleCheckIn}
+                              disabled={isLoadingAttendance}
+                              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-medium disabled:opacity-50"
+                            >
+                              {isLoadingAttendance ? 'Processing...' : 'Check In Without Photo'}
+                            </button>
+                            <p className="text-xs text-gray-400 mt-1">Attendance will be recorded with timestamp only</p>
+                          </div>
                         </div>
                       )}
 
@@ -689,6 +729,12 @@ export default function ProfilePage() {
 
                   {todayAttendance ? (
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border border-green-200">
+                      {/* Debug info - remove this later */}
+                      <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
+                        <strong>Debug Info:</strong> Check-out: {todayAttendance.checkOut || 'Not set'} | 
+                        Total Hours: {todayAttendance.totalHours || 'Not set'}
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="text-center">
                           <div className="text-sm text-gray-600 mb-2 font-medium">Check In</div>
@@ -752,27 +798,45 @@ export default function ProfilePage() {
                   )}
 
                   {/* Check Out with Photo */}
-                  {todayAttendance && !todayAttendance.checkOut && (
+                  {todayAttendance && (
                     <div className="text-center">
                       <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Check Out with Photo</h3>
-                        <p className="text-gray-600 text-sm">Take a photo to check out</p>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {!todayAttendance.checkOut ? 'Check Out with Photo' : 'Check Out Completed'}
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          {!todayAttendance.checkOut ? 'Take a photo to check out' : 'You have already checked out for today'}
+                        </p>
                       </div>
                       
-                      {!showCamera && !capturedPhoto && (
-                        <button
-                          onClick={startCamera}
-                          className="flex items-center mx-auto px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium shadow-lg"
-                        >
-                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          Take Check-out Photo
-                        </button>
+                      {!todayAttendance.checkOut && !showCamera && !capturedPhoto && (
+                        <div className="flex flex-col items-center space-y-4">
+                          <button
+                            onClick={startCamera}
+                            className="flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium shadow-lg"
+                          >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Take Check-out Photo
+                          </button>
+                          
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-2">or</p>
+                            <button
+                              onClick={handleCheckOut}
+                              disabled={isLoadingAttendance}
+                              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-medium disabled:opacity-50"
+                            >
+                              {isLoadingAttendance ? 'Processing...' : 'Check Out Without Photo'}
+                            </button>
+                            <p className="text-xs text-gray-400 mt-1">Check-out will be recorded with timestamp only</p>
+                          </div>
+                        </div>
                       )}
 
-                      {capturedPhoto && (
+                      {!todayAttendance.checkOut && capturedPhoto && (
                         <div className="flex flex-col items-center">
                           <div className="mb-4">
                             <Image
@@ -801,6 +865,8 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       )}
+
+
                     </div>
                   )}
 

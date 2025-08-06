@@ -56,11 +56,6 @@ export async function POST(request: NextRequest) {
     const { photo } = body;
     console.log('Photo received, size:', photo ? photo.length : 0);
 
-    if (!photo) {
-      console.log('No photo provided');
-      return NextResponse.json({ error: 'Photo is required' }, { status: 400 });
-    }
-
     // Check if attendance already exists for today
     const today = new Date().toISOString().split('T')[0];
     console.log('Checking for existing attendance on:', today);
@@ -70,16 +65,6 @@ export async function POST(request: NextRequest) {
       console.log('Attendance already exists for today');
       return NextResponse.json({ error: 'Attendance already recorded for today' }, { status: 400 });
     }
-
-    // Upload photo to S3
-    console.log('Uploading photo to S3...');
-    const uploadResult = await uploadAttendancePhotoToS3(
-      photo,
-      userId,
-      user.name,
-      'check-in'
-    );
-    console.log('Photo uploaded to S3:', uploadResult.url);
 
     // Determine status based on time (10:00 AM cutoff)
     const now = new Date();
@@ -94,12 +79,36 @@ export async function POST(request: NextRequest) {
       hour12: false
     });
 
+    let photoUrl = null;
+    let photoUploadError = null;
+
+    // Try to upload photo if provided
+    if (photo) {
+      try {
+        console.log('Uploading photo to S3...');
+        const uploadResult = await uploadAttendancePhotoToS3(
+          photo,
+          userId,
+          user.name,
+          'check-in'
+        );
+        console.log('Photo uploaded to S3:', uploadResult.url);
+        photoUrl = uploadResult.url;
+      } catch (uploadError) {
+        console.error('Photo upload failed:', uploadError);
+        photoUploadError = 'Photo upload failed, but attendance recorded';
+      }
+    } else {
+      photoUploadError = 'No photo provided, but attendance recorded';
+    }
+
     console.log('Creating attendance record:', { 
       userId, 
       date: today, 
       checkIn: checkInTime, 
       status,
-      photoUrl: uploadResult.url 
+      photoUrl,
+      photoUploadError
     });
 
     // Create new attendance record
@@ -108,14 +117,14 @@ export async function POST(request: NextRequest) {
       date: today,
       checkIn: checkInTime,
       status,
-      checkInPhoto: uploadResult.url
+      checkInPhoto: photoUrl
     });
 
     await attendance.save();
     console.log('Attendance saved successfully');
 
     return NextResponse.json({ 
-      message: 'Check-in successful',
+      message: photoUploadError ? 'Check-in successful (photo upload failed)' : 'Check-in successful',
       attendance: {
         _id: attendance._id,
         userId: attendance.userId,
@@ -126,7 +135,8 @@ export async function POST(request: NextRequest) {
         status: attendance.status,
         checkInPhoto: attendance.checkInPhoto,
         createdAt: attendance.createdAt
-      }
+      },
+      photoUploadError
     });
 
   } catch (error) {

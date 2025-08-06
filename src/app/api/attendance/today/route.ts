@@ -14,20 +14,20 @@ export async function GET(request: NextRequest) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     const userId = decoded.userId;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    
+    // Get today's date in YYYY-MM-DD format to match our attendance records
+    const today = new Date().toISOString().split('T')[0];
+    console.log('Looking for attendance on date:', today);
 
     // Import Attendance model dynamically to avoid TypeScript issues
     const { default: Attendance } = await import('@/models/Attendance');
     
     const attendance = await Attendance.findOne({
       userId,
-      date: {
-        $gte: today,
-        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-      }
+      date: today
     });
 
+    console.log('Found attendance:', attendance);
     return NextResponse.json({ attendance });
   } catch (error) {
     console.error('Error fetching today\'s attendance:', error);

@@ -53,10 +53,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { photo } = body;
 
-    if (!photo) {
-      return NextResponse.json({ error: 'Photo is required' }, { status: 400 });
-    }
-
     // Find today's attendance record
     const today = new Date().toISOString().split('T')[0];
     const attendance = await Attendance.findOne({ userId, date: today });
@@ -68,16 +64,6 @@ export async function POST(request: NextRequest) {
     if (attendance.checkOut) {
       return NextResponse.json({ error: 'Already checked out today' }, { status: 400 });
     }
-
-    // Upload photo to S3
-    console.log('Uploading check-out photo to S3...');
-    const uploadResult = await uploadAttendancePhotoToS3(
-      photo,
-      userId,
-      user.name,
-      'check-out'
-    );
-    console.log('Check-out photo uploaded to S3:', uploadResult.url);
 
     // Calculate check-out time and total hours
     const now = new Date();
@@ -96,17 +82,47 @@ export async function POST(request: NextRequest) {
 
     const totalHours = (now.getTime() - checkInDate.getTime()) / (1000 * 60 * 60);
 
+    let photoUrl = null;
+    let photoUploadError = null;
+
+    // Try to upload photo if provided
+    if (photo) {
+      try {
+        console.log('Uploading check-out photo to S3...');
+        const uploadResult = await uploadAttendancePhotoToS3(
+          photo,
+          userId,
+          user.name,
+          'check-out'
+        );
+        console.log('Check-out photo uploaded to S3:', uploadResult.url);
+        photoUrl = uploadResult.url;
+      } catch (uploadError) {
+        console.error('Check-out photo upload failed:', uploadError);
+        photoUploadError = 'Photo upload failed, but check-out recorded';
+      }
+    } else {
+      photoUploadError = 'No photo provided, but check-out recorded';
+    }
+
     // Update attendance record
     attendance.checkOut = checkOutTime;
     attendance.totalHours = Math.round(totalHours * 100) / 100; // Round to 2 decimal places
-    attendance.checkOutPhoto = uploadResult.url;
+    attendance.checkOutPhoto = photoUrl;
     attendance.updatedAt = new Date();
+
+    console.log('Updating attendance record with:', {
+      checkOut: attendance.checkOut,
+      totalHours: attendance.totalHours,
+      checkOutPhoto: attendance.checkOutPhoto
+    });
 
     await attendance.save();
     console.log('Check-out attendance updated successfully');
+    console.log('Final attendance record:', attendance);
 
     return NextResponse.json({ 
-      message: 'Check-out successful',
+      message: photoUploadError ? 'Check-out successful (photo upload failed)' : 'Check-out successful',
       attendance: {
         _id: attendance._id,
         userId: attendance.userId,
@@ -118,7 +134,8 @@ export async function POST(request: NextRequest) {
         checkInPhoto: attendance.checkInPhoto,
         checkOutPhoto: attendance.checkOutPhoto,
         createdAt: attendance.createdAt
-      }
+      },
+      photoUploadError
     });
 
   } catch (error) {
