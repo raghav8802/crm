@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface UserData {
   _id: string;
@@ -596,7 +597,7 @@ export default function ProfilePage() {
                         <p className="text-gray-600 text-sm">Please take a selfie to mark your attendance</p>
                         <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="text-xs text-blue-700">
-                            <strong>Note:</strong> Check-ins after 10:00 AM will be marked as "Late"
+                            <strong>Note:</strong> Check-ins after 10:00 AM will be marked as &ldquo;Late&rdquo;
                           </p>
                         </div>
                       </div>
@@ -657,11 +658,13 @@ export default function ProfilePage() {
                       {capturedPhoto && (
                         <div className="flex flex-col items-center">
                           <div className="mb-4">
-                            <img
+                            <Image
                               src={capturedPhoto}
                               alt="Captured photo"
+                              width={400}
+                              height={300}
                               className="w-full max-w-md h-auto rounded-lg border-2 border-gray-200"
-                              loading="lazy"
+                              priority={false}
                             />
                           </div>
                           <div className="flex space-x-4">
@@ -694,11 +697,13 @@ export default function ProfilePage() {
                           </div>
                           {todayAttendance.checkInPhoto && (
                             <div className="mb-3">
-                              <img
+                              <Image
                                 src={todayAttendance.checkInPhoto}
                                 alt="Check-in photo"
+                                width={128}
+                                height={128}
                                 className="w-32 h-32 object-cover rounded-lg border-2 border-green-200 mx-auto"
-                                loading="lazy"
+                                priority={false}
                               />
                               <p className="text-xs text-gray-500 mt-1">Check-in Photo</p>
                             </div>
@@ -712,11 +717,13 @@ export default function ProfilePage() {
                             </div>
                             {todayAttendance.checkOutPhoto && (
                               <div className="mb-3">
-                                <img
+                                <Image
                                   src={todayAttendance.checkOutPhoto}
                                   alt="Check-out photo"
+                                  width={128}
+                                  height={128}
                                   className="w-32 h-32 object-cover rounded-lg border-2 border-red-200 mx-auto"
-                                  loading="lazy"
+                                  priority={false}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Check-out Photo</p>
                               </div>
@@ -768,11 +775,13 @@ export default function ProfilePage() {
                       {capturedPhoto && (
                         <div className="flex flex-col items-center">
                           <div className="mb-4">
-                            <img
+                            <Image
                               src={capturedPhoto}
                               alt="Captured photo"
+                              width={400}
+                              height={300}
                               className="w-full max-w-md h-auto rounded-lg border-2 border-gray-200"
-                              loading="lazy"
+                              priority={false}
                             />
                           </div>
                           <div className="flex space-x-4">

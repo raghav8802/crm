@@ -4,7 +4,6 @@ import TermInsuranceVerification from '@/models/TermInsuranceVerification';
 import HealthInsuranceVerification from '@/models/HealthInsuranceVerification';
 import LifeInsuranceVerification from '@/models/LifeInsuranceVerification';
 import CarInsuranceVerification from '@/models/CarInsuranceVerification';
-import { Lead } from '@/models/Lead';
 
 export async function GET() {
   try {
