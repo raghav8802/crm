@@ -70,6 +70,10 @@ export interface ITermInsuranceVerification extends Document {
     timestamp: Date;
   }>;
 
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate?: string;
+  renewalType?: 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
+
   // NEW DOCUMENT STRUCTURE
   documents: Array<{
     documentType: 'PAN' | 'Aadhaar' | 'Photo' | 'Cancelled Cheque' | 'Bank Statement' | 'Other';
@@ -229,6 +233,13 @@ const TermInsuranceVerificationSchema = new Schema({
     user: String,
     timestamp: { type: Date, default: Date.now }
   }],
+
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate: String,
+  renewalType: {
+    type: String,
+    enum: ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
+  },
 
   // NEW DOCUMENT STRUCTURE
   documents: [{

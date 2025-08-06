@@ -62,6 +62,10 @@ export interface IHealthInsuranceVerification extends Document {
     timestamp: Date;
   }>;
 
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate?: string;
+  renewalType?: 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
+
   // NEW STRUCTURED DOCUMENT MANAGEMENT
   documents: {
     proposerDocuments: Array<{
@@ -192,6 +196,13 @@ const HealthInsuranceVerificationSchema = new Schema({
     user: { type: String },
     timestamp: { type: Date, default: Date.now }
   }],
+
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate: { type: String },
+  renewalType: {
+    type: String,
+    enum: ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
+  },
 
   // NEW STRUCTURED DOCUMENT MANAGEMENT
   documents: {

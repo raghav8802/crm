@@ -73,6 +73,10 @@ export interface ILifeInsuranceVerification extends Document {
   premiumAmount: string;
   remarks: string;
 
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate?: string;
+  renewalType?: 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
+
   // New Document Structure
   documents: {
     proposerDocuments: Array<{
@@ -246,6 +250,13 @@ const LifeInsuranceVerificationSchema = new Schema({
   existingPolicy: String,
   premiumAmount: String,
   remarks: String,
+
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate: String,
+  renewalType: {
+    type: String,
+    enum: ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
+  },
 
   // New Document Structure
   documents: {

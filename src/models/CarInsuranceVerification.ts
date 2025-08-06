@@ -45,6 +45,10 @@ export interface ICarInsuranceVerification extends Document {
   }>;
 
   paymentScreenshot?: string;
+
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate?: string;
+  renewalType?: 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
 }
 
 const CarInsuranceVerificationSchema = new Schema({
@@ -99,6 +103,13 @@ const CarInsuranceVerificationSchema = new Schema({
   ],
 
   paymentScreenshot: { type: String },
+
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate: { type: String },
+  renewalType: {
+    type: String,
+    enum: ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
+  },
 
 }, {
   timestamps: true

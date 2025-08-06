@@ -114,6 +114,10 @@ interface HealthInsuranceVerification {
   // For search/filter
   panNumber: string;
   aadharNumber: string;
+
+  // Policy Management (Payment Coordinator Fields)
+  policyIssueDate?: string;
+  renewalType?: 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
 }
 
 export default function HealthInsuranceVerificationPage() {
@@ -204,7 +208,21 @@ export default function HealthInsuranceVerificationPage() {
 
   const handleSave = async () => {
     if (!editData) return;
+    
+    // Validate mandatory fields for Payment Coordinator
+    if (currentUser?.role === 'Payment_Coordinator') {
+      if (!editData.policyIssueDate) {
+        setError('Policy Issue Date is mandatory for Payment Coordinators');
+        return;
+      }
+      if (!editData.renewalType) {
+        setError('Renewal Type is mandatory for Payment Coordinators');
+        return;
+      }
+    }
+    
     setIsSaving(true);
+    setError(null);
     try {
       const payload: any = {};
       
@@ -246,8 +264,8 @@ export default function HealthInsuranceVerificationPage() {
       } else {
         throw new Error('Invalid response format');
       }
-    } catch {
-      setError('Failed to update');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update');
     } finally {
       setIsSaving(false);
     }
@@ -932,6 +950,40 @@ export default function HealthInsuranceVerificationPage() {
                 )}
               </div>
             </div>
+
+            {/* Policy Management (Payment Coordinator Section) */}
+            {currentUser?.role === 'Payment_Coordinator' && (
+              <div>
+                <h2 className="text-lg font-semibold text-blue-900 mb-4 border-b pb-2">Policy Management</h2>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800 mb-3">
+                    <strong>Payment Coordinator Required Fields:</strong> Please fill in the policy issue date and renewal type.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {renderField('Policy Issue Date', editData?.policyIssueDate, 'date', 'policyIssueDate')}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Renewal Type *</label>
+                    {canEdit ? (
+                      <select
+                        value={editData?.renewalType || ''}
+                        onChange={e => handleFieldChange('renewalType', e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select Renewal Type</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Half Yearly">Half Yearly</option>
+                        <option value="Yearly">Yearly</option>
+                      </select>
+                    ) : (
+                      <p className="mt-1 text-sm text-gray-900">{editData?.renewalType || 'Not set'}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* BI Document Upload Section for Link Created Status */}
             {editStatus === 'link_created' && (
