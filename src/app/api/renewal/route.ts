@@ -24,7 +24,7 @@ export async function GET() {
         insuranceType: 'term_insurance',
         lead: v.leadId,
         leadId: v.leadId._id || v.leadId
-      })),
+      })), //test
       ...healthVerifications.map(v => ({ 
         ...v, 
         insuranceType: 'health_insurance',
