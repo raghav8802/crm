@@ -1064,6 +1064,7 @@ export default function VerificationPage() {
             >
               <option value="">Select Company</option>
               <option value="Aditya Birlasun sun life">Aditya Birla sun life</option>
+              <option value="Bharti AXA">Bharti AXA</option>
               <option value="Bajaj Allianz life ">Bajaj Allianz life</option>
               <option value="Future Generali India Life Insurance">Future Generali India Life Insurance</option>
               <option value="Digit Insurance">Digit Insurance</option>

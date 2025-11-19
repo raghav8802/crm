@@ -1085,6 +1085,8 @@ export default function VerificationPage() {
             >
               <option value="">Select Company</option>
               <option value="Star Health Insurance">Star Health Insurance</option>
+              <option value="Cigna Insurance">Cigna Insurance</option>
+              <option value="Bharti AXA">Bharti AXA</option>
               <option value="Zuno General Insurance ">Zuno General Insurance</option>
               <option value="Tata AIG Insurance">Tata AIG Insurance</option>
               <option value="DigitPlus Insurance">DigitPlus Insurance</option>
